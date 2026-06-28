@@ -1,0 +1,125 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+
+function Registro() {
+  const [tab, setTab] = useState('cliente');
+  const [categorias, setCategorias] = useState([]);
+  const [error, setError] = useState('');
+  const { registroCliente, registroEmprendedor } = useAuth();
+  const navigate = useNavigate();
+
+  const [clienteForm, setClienteForm] = useState({ nombre_usuario: '', email: '', password: '' });
+  const [empForm, setEmpForm] = useState({
+    nombre_usuario: '', email: '', password: '',
+    nombre_emprendimiento: '', telefono: '', descripcion: '', id_categoria: '',
+  });
+
+  useEffect(() => {
+    api.get('/categorias').then(r => setCategorias(r.data)).catch(() => {});
+  }, []);
+
+  const handleCliente = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await registroCliente(clienteForm.nombre_usuario, clienteForm.email, clienteForm.password);
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error en el registro');
+    }
+  };
+
+  const handleEmprendedor = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await registroEmprendedor(empForm);
+      navigate('/mi-emprendimiento');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error en el registro');
+    }
+  };
+
+  return (
+    <div className="auth-wrapper page-enter">
+      <div className="auth-card" style={{ maxWidth: 520 }}>
+        <h2>Crear cuenta</h2>
+
+        {error && (
+          <div className="alert alert-error">
+            {error}
+            <button className="alert-close" onClick={() => setError('')}>&times;</button>
+          </div>
+        )}
+
+        <div className="tabs">
+          <button className={`tab ${tab === 'cliente' ? 'active' : ''}`} onClick={() => setTab('cliente')}>Cliente</button>
+          <button className={`tab ${tab === 'emprendedor' ? 'active' : ''}`} onClick={() => setTab('emprendedor')}>Emprendedor</button>
+        </div>
+
+        {tab === 'cliente' ? (
+          <form onSubmit={handleCliente}>
+            <div className="form-group">
+              <label className="form-label">Nombre de usuario</label>
+              <input className="form-input" value={clienteForm.nombre_usuario} onChange={e => setClienteForm({ ...clienteForm, nombre_usuario: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input type="email" className="form-input" value={clienteForm.email} onChange={e => setClienteForm({ ...clienteForm, email: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Contraseña</label>
+              <input type="password" className="form-input" value={clienteForm.password} onChange={e => setClienteForm({ ...clienteForm, password: e.target.value })} required />
+            </div>
+            <button type="submit" className="btn btn-primary btn-block">Registrarse como cliente</button>
+          </form>
+        ) : (
+          <form onSubmit={handleEmprendedor}>
+            <div className="form-group">
+              <label className="form-label">Nombre de usuario</label>
+              <input className="form-input" value={empForm.nombre_usuario} onChange={e => setEmpForm({ ...empForm, nombre_usuario: e.target.value })} required />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input type="email" className="form-input" value={empForm.email} onChange={e => setEmpForm({ ...empForm, email: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Contraseña</label>
+                <input type="password" className="form-input" value={empForm.password} onChange={e => setEmpForm({ ...empForm, password: e.target.value })} required />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Nombre del emprendimiento</label>
+              <input className="form-input" value={empForm.nombre_emprendimiento} onChange={e => setEmpForm({ ...empForm, nombre_emprendimiento: e.target.value })} required />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Teléfono</label>
+                <input className="form-input" value={empForm.telefono} onChange={e => setEmpForm({ ...empForm, telefono: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Categoría principal</label>
+                <select className="form-select" value={empForm.id_categoria} onChange={e => setEmpForm({ ...empForm, id_categoria: e.target.value })}>
+                  <option value="">Seleccionar</option>
+                  {categorias.map(c => (
+                    <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Descripción</label>
+              <textarea className="form-textarea" rows={3} value={empForm.descripcion} onChange={e => setEmpForm({ ...empForm, descripcion: e.target.value })} placeholder="Contanos sobre tu emprendimiento..." />
+            </div>
+            <button type="submit" className="btn btn-primary btn-block">Registrar emprendimiento</button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default Registro;
