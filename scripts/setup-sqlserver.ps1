@@ -1,6 +1,16 @@
+param(
+    [string]$InstanceName = "SQLEXPRESS"
+)
+
 $ErrorActionPreference = "Stop"
-$instance = "MSSQL16.SQLEXPRESS"
-$serviceName = "MSSQL`$SQLEXPRESS"
+
+$instanceKey = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL" -ErrorAction SilentlyContinue
+if (-not $instanceKey -or -not $instanceKey.$InstanceName) {
+    Write-Error "No se encontro la instancia '$InstanceName'. Instala SQL Server Express primero: https://www.microsoft.com/sql-server/sql-server-downloads"
+    exit 1
+}
+$instance = $instanceKey.$InstanceName
+$serviceName = "MSSQL`$$InstanceName"
 
 # 1. Enable mixed mode authentication (Windows + SQL logins)
 $regBase = "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$instance\MSSQLServer"
