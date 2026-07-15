@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { usuarios } = require('../data/store');
+const { query } = require('../db/pool');
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -11,7 +11,11 @@ function authenticateToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const usuario = usuarios.find(u => u.id_usuario === decoded.id_usuario && u.activo);
+    const { recordset } = await query(
+      'SELECT id_usuario, tipo, email FROM dbo.usuarios WHERE id_usuario = @id_usuario AND activo = 1',
+      { id_usuario: decoded.id_usuario }
+    );
+    const usuario = recordset[0];
     if (!usuario) {
       return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
     }

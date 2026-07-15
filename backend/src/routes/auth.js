@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { usuarios, emprendimientos, getNextId } = require('../data/store');
+const { query } = require('../db/pool');
 
 router.post('/registro/cliente', async (req, res) => {
   const { nombre_usuario, email, password } = req.body;
@@ -11,31 +11,29 @@ router.post('/registro/cliente', async (req, res) => {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
 
-  if (usuarios.find(u => u.email === email)) {
+  const { recordset: existentes } = await query('SELECT id_usuario FROM dbo.usuarios WHERE email = @email', { email });
+  if (existentes.length > 0) {
     return res.status(409).json({ error: 'El email ya está registrado' });
   }
 
   const hash = await bcrypt.hash(password, 10);
-  const usuario = {
-    id_usuario: getNextId('usuario'),
-    nombre_usuario,
-    email,
-    password_hash: hash,
-    tipo: 'cliente',
-    activo: true,
-    fecha_registro: new Date().toISOString(),
-  };
-  usuarios.push(usuario);
+  const { recordset } = await query(
+    `INSERT INTO dbo.usuarios (nombre_usuario, email, password_hash, tipo, activo)
+     OUTPUT INSERTED.id_usuario, INSERTED.fecha_registro
+     VALUES (@nombre_usuario, @email, @password_hash, 'cliente', 1)`,
+    { nombre_usuario, email, password_hash: hash }
+  );
+  const id_usuario = recordset[0].id_usuario;
 
   const token = jwt.sign(
-    { id_usuario: usuario.id_usuario, tipo: usuario.tipo },
+    { id_usuario, tipo: 'cliente' },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 
   res.status(201).json({
     token,
-    usuario: { id_usuario: usuario.id_usuario, nombre_usuario, email, tipo: usuario.tipo },
+    usuario: { id_usuario, nombre_usuario, email, tipo: 'cliente' },
   });
 });
 
@@ -46,46 +44,44 @@ router.post('/registro/emprendedor', async (req, res) => {
     return res.status(400).json({ error: 'Campos obligatorios: nombre_usuario, email, password, nombre_emprendimiento' });
   }
 
-  if (usuarios.find(u => u.email === email)) {
+  const { recordset: existentes } = await query('SELECT id_usuario FROM dbo.usuarios WHERE email = @email', { email });
+  if (existentes.length > 0) {
     return res.status(409).json({ error: 'El email ya está registrado' });
   }
 
   const hash = await bcrypt.hash(password, 10);
-  const usuario = {
-    id_usuario: getNextId('usuario'),
-    nombre_usuario,
-    email,
-    password_hash: hash,
-    tipo: 'emprendedor',
-    activo: true,
-    fecha_registro: new Date().toISOString(),
-  };
-  usuarios.push(usuario);
+  const { recordset: userRecord } = await query(
+    `INSERT INTO dbo.usuarios (nombre_usuario, email, password_hash, tipo, activo)
+     OUTPUT INSERTED.id_usuario
+     VALUES (@nombre_usuario, @email, @password_hash, 'emprendedor', 1)`,
+    { nombre_usuario, email, password_hash: hash }
+  );
+  const id_usuario = userRecord[0].id_usuario;
 
-  const emprendimiento = {
-    id_emprendimiento: getNextId('emprendimiento'),
-    id_usuario: usuario.id_usuario,
-    nombre: nombre_emprendimiento,
-    descripcion: descripcion || '',
-    telefono: telefono || '',
-    ubicacion: '',
-    imagen_perfil: '',
-    redes_sociales: '',
-    activo: true,
-    fecha_creacion: new Date().toISOString(),
-    id_categoria: id_categoria || null,
-  };
-  emprendimientos.push(emprendimiento);
+  const { recordset: empRecord } = await query(
+    `INSERT INTO dbo.emprendimientos
+        (id_usuario, nombre, descripcion, telefono, ubicacion, redes_sociales, activo, id_categoria)
+     OUTPUT INSERTED.*
+     VALUES (@id_usuario, @nombre, @descripcion, @telefono, '', '', 1, @id_categoria)`,
+    {
+      id_usuario,
+      nombre: nombre_emprendimiento,
+      descripcion: descripcion || '',
+      telefono: telefono || '',
+      id_categoria: id_categoria || null,
+    }
+  );
+  const emprendimiento = empRecord[0];
 
   const token = jwt.sign(
-    { id_usuario: usuario.id_usuario, tipo: usuario.tipo },
+    { id_usuario, tipo: 'emprendedor' },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 
   res.status(201).json({
     token,
-    usuario: { id_usuario: usuario.id_usuario, nombre_usuario, email, tipo: usuario.tipo },
+    usuario: { id_usuario, nombre_usuario, email, tipo: 'emprendedor' },
     emprendimiento,
   });
 });
@@ -97,7 +93,11 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Email y password son obligatorios' });
   }
 
-  const usuario = usuarios.find(u => u.email === email && u.activo);
+  const { recordset } = await query(
+    'SELECT * FROM dbo.usuarios WHERE email = @email AND activo = 1',
+    { email }
+  );
+  const usuario = recordset[0];
   if (!usuario) {
     return res.status(401).json({ error: 'Credenciales inválidas' });
   }
@@ -113,12 +113,15 @@ router.post('/login', async (req, res) => {
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 
-  const emprendimiento = emprendimientos.find(e => e.id_usuario === usuario.id_usuario);
+  const { recordset: empRecord } = await query(
+    'SELECT * FROM dbo.emprendimientos WHERE id_usuario = @id_usuario',
+    { id_usuario: usuario.id_usuario }
+  );
 
   res.json({
     token,
     usuario: { id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario, email: usuario.email, tipo: usuario.tipo },
-    emprendimiento: emprendimiento || null,
+    emprendimiento: empRecord[0] || null,
   });
 });
 
