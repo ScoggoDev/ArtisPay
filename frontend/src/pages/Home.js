@@ -2,14 +2,23 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
+import ServiceCard from '../components/ServiceCard';
 
 function Home() {
-  const [productos, setProductos] = useState([]);
-  const [emprendimientos, setEmprendimientos] = useState([]);
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
-    api.get('/productos').then(r => setProductos(r.data.slice(0, 6))).catch(() => {});
-    api.get('/emprendimientos').then(r => setEmprendimientos(r.data.slice(0, 4))).catch(() => {});
+    Promise.all([
+      api.get('/productos').catch(() => ({ data: [] })),
+      api.get('/servicios').catch(() => ({ data: [] })),
+    ]).then(([prodRes, servRes]) => {
+      const productos = prodRes.data.map(p => ({ ...p, _tipo: 'producto', _fecha: p.fecha_publicacion }));
+      const servicios = servRes.data.map(s => ({ ...s, _tipo: 'servicio', _fecha: s.fecha_creacion }));
+      const combined = [...productos, ...servicios]
+        .sort((a, b) => new Date(b._fecha) - new Date(a._fecha))
+        .slice(0, 6);
+      setItems(combined);
+    });
   }, []);
 
   return (
@@ -31,48 +40,25 @@ function Home() {
         <div className="hero-decoration-2" />
       </section>
 
-      {productos.length > 0 && (
-        <section className="section">
-          <div className="container">
-            <div className="section-header">
-              <h2>Productos recientes</h2>
-              <Link to="/catalogo">Ver todos &rarr;</Link>
-            </div>
-            <div className="grid grid-3">
-              {productos.map(p => (
-                <ProductCard key={p.id_producto} producto={p} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="section" style={{ background: 'var(--linen)' }}>
+      <section className="section">
         <div className="container">
           <div className="section-header">
-            <h2>Emprendedores</h2>
-            <Link to="/emprendedores">Ver todos &rarr;</Link>
+            <h2>Últimas publicaciones</h2>
+            <Link to="/catalogo">Ver catálogo &rarr;</Link>
           </div>
-          {emprendimientos.length === 0 ? (
+          {items.length === 0 ? (
             <div className="empty">
               <div className="empty-icon">&#127912;</div>
-              <p>Aún no hay emprendedores registrados. ¡Sé el primero!</p>
+              <p>Aún no hay publicaciones. ¡Sé el primero en publicar!</p>
               <Link to="/registro" className="btn btn-primary" style={{ marginTop: '1rem' }}>Registrar mi emprendimiento</Link>
             </div>
           ) : (
-            <div className="grid grid-4">
-              {emprendimientos.map(e => (
-                <div key={e.id_emprendimiento} className="emp-card">
-                  <div className="emp-avatar">
-                    {e.nombre.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="emp-name">{e.nombre}</div>
-                  <p className="emp-desc">{e.descripcion?.substring(0, 70)}</p>
-                  <Link to={`/emprendedor/${e.id_emprendimiento}`} className="btn btn-outline btn-sm">
-                    Ver perfil
-                  </Link>
-                </div>
-              ))}
+            <div className="grid grid-3">
+              {items.map(item =>
+                item._tipo === 'producto'
+                  ? <ProductCard key={`p-${item.id_producto}`} producto={item} />
+                  : <ServiceCard key={`s-${item.id_servicio}`} servicio={item} />
+              )}
             </div>
           )}
         </div>

@@ -26,6 +26,7 @@ function Navbar() {
       <ul className={`nav-links ${open ? 'open' : ''}`}>
         <li><Link to="/catalogo" className="nav-link" onClick={close}>Catálogo</Link></li>
         <li><Link to="/emprendedores" className="nav-link" onClick={close}>Emprendedores</Link></li>
+        <li><Link to="/mapa" className="nav-link" onClick={close}>Mapa</Link></li>
 
         {usuario ? (
           <>

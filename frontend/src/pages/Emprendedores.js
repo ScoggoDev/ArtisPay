@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import ArtisanLogo from '../components/ArtisanLogo';
 
 function Emprendedores() {
   const [emprendimientos, setEmprendimientos] = useState([]);
@@ -22,7 +23,7 @@ function Emprendedores() {
           <div className="grid grid-4">
             {emprendimientos.map(e => (
               <div key={e.id_emprendimiento} className="emp-card">
-                <div className="emp-avatar">{e.nombre.charAt(0).toUpperCase()}</div>
+                <ArtisanLogo nombre={e.nombre} id_categoria={e.id_categoria} size={80} />
                 <div className="emp-name">{e.nombre}</div>
                 <p className="emp-desc">{e.descripcion?.substring(0, 80)}</p>
                 {e.ubicacion && <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '0.8rem' }}>{e.ubicacion}</p>}

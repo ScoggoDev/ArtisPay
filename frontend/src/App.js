@@ -13,6 +13,7 @@ import MiEmprendimiento from './pages/MiEmprendimiento';
 import Favoritos from './pages/Favoritos';
 import Perfil from './pages/Perfil';
 import Admin from './pages/Admin';
+import Mapa from './pages/Mapa';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/favoritos" element={<Favoritos />} />
             <Route path="/perfil" element={<Perfil />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/mapa" element={<Mapa />} />
           </Routes>
         </main>
         <footer className="footer">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
+import ArtisanLogo from '../components/ArtisanLogo';
 
 function EmprendedorDetalle() {
   const { id } = useParams();
@@ -17,7 +18,7 @@ function EmprendedorDetalle() {
     <div className="page-enter">
       <div className="container">
         <div className="profile-hero">
-          <div className="profile-avatar">{emp.nombre.charAt(0).toUpperCase()}</div>
+          <ArtisanLogo nombre={emp.nombre} id_categoria={emp.id_categoria} size={100} />
           <h2>{emp.nombre}</h2>
           <p style={{ color: 'var(--text-light)', maxWidth: 500, margin: '0.5rem auto 1rem' }}>{emp.descripcion}</p>
           {emp.ubicacion && <p style={{ fontSize: '0.88rem', color: 'var(--text-light)' }}>{emp.ubicacion}</p>}

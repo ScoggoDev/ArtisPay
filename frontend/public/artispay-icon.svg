@@ -1,0 +1,35 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C85A35"/>
+      <stop offset="100%" stop-color="#E8A048"/>
+    </linearGradient>
+    <linearGradient id="gem" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD966"/>
+      <stop offset="100%" stop-color="#F2B830"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="256" height="256" rx="52" fill="url(#bg)"/>
+
+  <!-- Subtle inner highlight -->
+  <rect x="1" y="1" width="254" height="127" rx="52" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- Diamond gem above the A -->
+  <polygon points="128,28  152,68  128,88  104,68" fill="url(#gem)"/>
+  <!-- gem inner facet -->
+  <polygon points="128,36  148,68  128,80  108,68" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+  <line x1="128" y1="36" x2="128" y2="80" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="108" y1="68" x2="148" y2="68" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+
+  <!-- A letterform - two legs -->
+  <polygon points="128,86  178,210  156,210  128,140  100,210  78,210" fill="white"/>
+
+  <!-- Crossbar (terracotta so it reads as a cut-through) -->
+  <rect x="96" y="160" width="64" height="14" rx="7" fill="#D4693A"/>
+
+  <!-- Tiny shine dots -->
+  <circle cx="92" cy="198" r="4" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="164" cy="198" r="4" fill="rgba(255,255,255,0.25)"/>
+</svg>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ArtisanLogo from '../components/ArtisanLogo';
 
 function Perfil() {
   const { usuario, logout } = useAuth();
@@ -35,9 +36,7 @@ function Perfil() {
         )}
         <div className="edit-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
-            <div className="emp-avatar" style={{ width: 56, height: 56, fontSize: '1.4rem', flexShrink: 0 }}>
-              {usuario.nombre_usuario.charAt(0).toUpperCase()}
-            </div>
+            <ArtisanLogo nombre={usuario.nombre_usuario} size={56} />
             <div>
               <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{usuario.nombre_usuario}</div>
               <div style={{ color: 'var(--text-light)', fontSize: '0.88rem' }}>{usuario.email}</div>

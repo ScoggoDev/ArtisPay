@@ -1,0 +1,46 @@
+<svg width="260" height="72" viewBox="0 0 260 72" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C85A35"/>
+      <stop offset="100%" stop-color="#E8A048"/>
+    </linearGradient>
+    <linearGradient id="gem" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD966"/>
+      <stop offset="100%" stop-color="#F2B830"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Logomark square -->
+  <rect width="72" height="72" rx="15" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="71" height="35.5" rx="15" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- Gem -->
+  <polygon points="36,7  46,20  36,26  26,20" fill="url(#gem)"/>
+  <line x1="26" y1="20" x2="46" y2="20" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+  <line x1="36" y1="8" x2="36" y2="26" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+
+  <!-- A legs -->
+  <polygon points="36,24  52,60  44,60  36,40  28,60  20,60" fill="white"/>
+  <!-- Crossbar -->
+  <rect x="26" y="45" width="20" height="4" rx="2" fill="#D4693A"/>
+
+  <!-- Wordmark text -->
+  <!-- "ARTIS" in charcoal -->
+  <text
+    x="84" y="47"
+    font-family="Georgia, 'DM Serif Display', serif"
+    font-size="32"
+    font-weight="bold"
+    fill="#2D2A26"
+    letter-spacing="1"
+  >ARTIS</text>
+  <!-- "PAY" in terracotta -->
+  <text
+    x="184" y="47"
+    font-family="Georgia, 'DM Serif Display', serif"
+    font-size="32"
+    font-weight="bold"
+    fill="#E8734A"
+    letter-spacing="1"
+  >PAY</text>
+</svg>
