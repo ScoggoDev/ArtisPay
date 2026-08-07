@@ -60,9 +60,9 @@ router.post('/registro/emprendedor', async (req, res) => {
 
   const { recordset: empRecord } = await query(
     `INSERT INTO dbo.emprendimientos
-        (id_usuario, nombre, descripcion, telefono, ubicacion, redes_sociales, activo, id_categoria)
+        (id_usuario, nombre, descripcion, telefono, ubicacion, redes_sociales, id_categoria)
      OUTPUT INSERTED.*
-     VALUES (@id_usuario, @nombre, @descripcion, @telefono, '', '', 1, @id_categoria)`,
+     VALUES (@id_usuario, @nombre, @descripcion, @telefono, '', '', @id_categoria)`,
     {
       id_usuario,
       nombre: nombre_emprendimiento,
@@ -84,6 +84,42 @@ router.post('/registro/emprendedor', async (req, res) => {
     usuario: { id_usuario, nombre_usuario, email, tipo: 'emprendedor' },
     emprendimiento,
   });
+});
+
+router.post('/registro/moderador', async (req, res) => {
+  const { nombre_usuario, email, password } = req.body;
+
+  if (!nombre_usuario || !email || !password) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  const { recordset: existentes } = await query('SELECT id_usuario FROM dbo.usuarios WHERE email = @email', 
+    { email });
+  if (existentes.length > 0) {
+    return res.status(409).json({ error: 'El email ya está registrado' });
+  };
+
+  const hash = await bcrypt.hash(password, 10);
+
+  const { recordset } = await query(
+    `INSERT INTO dbo.usuarios (nombre_usuario, email, password_hash, tipo, activo)
+     OUTPUT INSERTED.id_usuario, INSERTED.fecha_registro
+     VALUES (@nombre_usuario, @email, @password_hash, 'moderador', 1)`,
+    { nombre_usuario, email, password_hash: hash }
+  );
+  const id_usuario = recordset[0].id_usuario;
+  const token = jwt.sign(
+    { id_usuario, tipo: 'moderador' },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+
+  res.status(201).json({
+    token,
+    usuario: { id_usuario, nombre_usuario, email, tipo: 'moderador' },
+  }); 
+
+  
 });
 
 router.post('/login', async (req, res) => {

@@ -4,29 +4,51 @@ const { authenticateToken } = require('../middleware/auth');
 const { query } = require('../db/pool');
 
 router.post('/', authenticateToken, async (req, res) => {
-  const { id_producto, motivo } = req.body;
+  const { id_reportante, id_reportado, id_producto , motivo, comentarios } = req.body;
 
-  if (!id_producto || !motivo) {
-    return res.status(400).json({ error: 'id_producto y motivo son obligatorios' });
+  if (!id_reportado || !motivo) {
+    return res.status(400).json({ error: 'id_reportado y motivo son obligatorios' });
   }
 
-  const { recordset: prodRecord } = await query(
-    'SELECT * FROM dbo.productos WHERE id_producto = @id_producto',
-    { id_producto: parseInt(id_producto) }
+  const { recordset: userRecord } = await query(
+    'SELECT * FROM dbo.usuarios WHERE id_usuario = @id_reportado',
+    { id_reportado: parseInt(id_reportado) }
   );
-  if (!prodRecord[0]) return res.status(404).json({ error: 'Producto no encontrado' });
+  if (!userRecord[0]) return res.status(404).json({ error: 'Usuario no encontrado' });
 
   const { recordset } = await query(`
-    INSERT INTO dbo.reportes (id_usuario, id_producto, motivo, estado)
+    INSERT INTO dbo.reportes (id_reportante, id_reportado, id_producto, motivo, comentarios, estado)
     OUTPUT INSERTED.*
-    VALUES (@id_usuario, @id_producto, @motivo, 'pendiente')
+    VALUES (@id_reportante, @id_reportado, @id_producto, @motivo, @comentarios, 'pendiente')
   `, {
-    id_usuario: req.usuario.id_usuario,
-    id_producto: parseInt(id_producto),
+    id_reportante: parseInt(id_reportante),
+    id_reportado: parseInt(id_reportado),
+    id_producto: parseInt(id_producto) || null,
     motivo,
+    comentarios: comentarios || null,
   });
 
   res.status(201).json(recordset[0]);
+});
+
+router.get('/', authenticateToken, async (req, res) => {
+  console.log('SQL Ejecutado:', sqlText);
+  const { recordset } = await query(`
+    SELECT 
+      r.id_reporte,
+      r.motivo,
+      r.fecha,
+      r.estado,
+      r.id_reportante,
+      r.id_reportado,
+      u1.email AS reportante, 
+      u2.nombre_usuario AS reportado 
+    FROM dbo.usuarios u1 
+    LEFT JOIN dbo.reportes r ON u1.id_usuario = r.id_reportante
+    LEFT JOIN dbo.usuarios u2 ON u2.id_usuario = r.id_reportado
+    WHERE r.id_reporte > 0;
+  `);
+  res.json(recordset);
 });
 
 module.exports = router;

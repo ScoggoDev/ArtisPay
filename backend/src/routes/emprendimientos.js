@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
     SELECT e.*, u.nombre_usuario AS nombre_responsable
     FROM dbo.emprendimientos e
     LEFT JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario
-    WHERE e.activo = 1
+    WHERE u.activo = 1
   `);
   res.json(recordset);
 });
@@ -20,13 +20,14 @@ router.get('/:id', async (req, res) => {
     SELECT e.*, u.nombre_usuario AS nombre_responsable
     FROM dbo.emprendimientos e
     LEFT JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario
-    WHERE e.id_emprendimiento = @id_emprendimiento AND e.activo = 1
+    WHERE e.id_emprendimiento = @id_emprendimiento AND u.activo = 1
   `, { id_emprendimiento });
   const emp = empRecord[0];
   if (!emp) return res.status(404).json({ error: 'Emprendimiento no encontrado' });
 
   const { recordset: productos } = await query(
-    'SELECT * FROM dbo.productos WHERE id_emprendimiento = @id_emprendimiento AND activo = 1',
+    `SELECT * FROM dbo.productos
+    WHERE id_emprendimiento = @id_emprendimiento`,
     { id_emprendimiento }
   );
   const { recordset: imagenes } = await query(`
@@ -40,7 +41,8 @@ router.get('/:id', async (req, res) => {
   }));
 
   const { recordset: servicios } = await query(
-    'SELECT * FROM dbo.servicios WHERE id_emprendimiento = @id_emprendimiento AND activo = 1',
+    `SELECT * FROM dbo.servicios 
+    WHERE id_emprendimiento = @id_emprendimiento`,
     { id_emprendimiento }
   );
 

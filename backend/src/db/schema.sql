@@ -87,9 +87,11 @@ CREATE TABLE dbo.solicitudes_presupuesto (
 IF OBJECT_ID('dbo.reportes', 'U') IS NULL
 CREATE TABLE dbo.reportes (
     id_reporte INT IDENTITY(1,1) PRIMARY KEY,
-    id_usuario INT NOT NULL REFERENCES dbo.usuarios(id_usuario),
-    id_producto INT NOT NULL REFERENCES dbo.productos(id_producto),
+    id_reportante INT NOT NULL REFERENCES dbo.usuarios(id_usuario),
+    id_reportado INT NOT NULL REFERENCES dbo.usuarios(id_usuario),
+    id_producto INT NULL REFERENCES dbo.productos(id_producto),
     motivo NVARCHAR(500) NOT NULL,
+    comentarios NVARCHAR(500) NULL,
     estado NVARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'resuelto', 'descartado')),
     fecha DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
