@@ -34,10 +34,16 @@ function Navbar() {
               <li><Link to="/mi-emprendimiento" className="nav-link" onClick={close}>Mi Taller</Link></li>
             )}
             {(usuario.tipo === 'admin' || usuario.tipo === 'moderador') && (
-              <li><Link to="/admin" className="nav-link" onClick={close}>Admin</Link></li>
+              <li><Link to="/admin" className="nav-link" onClick={close}>Administrar</Link></li>
             )}
-            <li><Link to="/favoritos" className="nav-link" onClick={close}>Favoritos</Link></li>
-            <li><Link to="/perfil" className="nav-link" onClick={close}>{usuario.nombre_usuario}</Link></li>
+
+            {
+              (usuario.tipo === 'emprendedor' || usuario.tipo === 'cliente') &&
+              <>
+                <li><Link to="/favoritos" className="nav-link" onClick={close}>Favoritos</Link></li>
+                <li><Link to="/perfil" className="nav-link" onClick={close}>{usuario.nombre_usuario}</Link></li>
+              </>
+            }
             <li><button className="btn btn-ghost btn-sm" onClick={handleLogout}>Salir</button></li>
           </>
         ) : (

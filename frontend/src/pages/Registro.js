@@ -10,9 +10,9 @@ function Registro() {
   const { registroCliente, registroEmprendedor } = useAuth();
   const navigate = useNavigate();
 
-  const [clienteForm, setClienteForm] = useState({ nombre_usuario: '', email: '', password: '' });
+  const [clienteForm, setClienteForm] = useState({ nombre_usuario: '', email: '', password: '', confirm_password: '' });
   const [empForm, setEmpForm] = useState({
-    nombre_usuario: '', email: '', password: '',
+    nombre_usuario: '', email: '', password: '',  confirm_password: '',
     nombre_emprendimiento: '', telefono: '', descripcion: '', id_categoria: '',
   });
 
@@ -23,6 +23,15 @@ function Registro() {
   const handleCliente = async (e) => {
     e.preventDefault();
     setError('');
+    if(clienteForm.password.length < 8){
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+     if (clienteForm.password !== clienteForm.confirm_password) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
     try {
       await registroCliente(clienteForm.nombre_usuario, clienteForm.email, clienteForm.password);
       navigate('/');
@@ -34,6 +43,14 @@ function Registro() {
   const handleEmprendedor = async (e) => {
     e.preventDefault();
     setError('');
+     if(empForm.password.length < 8){
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    if (empForm.password !== empForm.confirm_password) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
     try {
       await registroEmprendedor(empForm);
       navigate('/mi-emprendimiento');
@@ -73,6 +90,10 @@ function Registro() {
               <label className="form-label">Contraseña</label>
               <input type="password" className="form-input" value={clienteForm.password} onChange={e => setClienteForm({ ...clienteForm, password: e.target.value })} required />
             </div>
+            <div className="form-group">
+              <label className="form-label">Confirmar contraseña</label>
+              <input type="password" className="form-input" value={clienteForm.confirm_password} onChange={e => setClienteForm({ ...clienteForm, confirm_password: e.target.value })} required />
+            </div>
             <button type="submit" className="btn btn-primary btn-block">Registrarse como cliente</button>
           </form>
         ) : (
@@ -92,17 +113,21 @@ function Registro() {
               </div>
             </div>
             <div className="form-group">
+              <label className="form-label">Confirmar contraseña</label>
+              <input type="password" className="form-input" value={empForm.confirm_password} onChange={e => setEmpForm({ ...empForm, confirm_password: e.target.value })} required />
+            </div>
+            <div className="form-group">
               <label className="form-label">Nombre del emprendimiento</label>
               <input className="form-input" value={empForm.nombre_emprendimiento} onChange={e => setEmpForm({ ...empForm, nombre_emprendimiento: e.target.value })} required />
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Teléfono</label>
-                <input className="form-input" value={empForm.telefono} onChange={e => setEmpForm({ ...empForm, telefono: e.target.value })} />
+                <input className="form-input" value={empForm.telefono} onChange={e => setEmpForm({ ...empForm, telefono: e.target.value })} required/>
               </div>
               <div className="form-group">
                 <label className="form-label">Categoría principal</label>
-                <select className="form-select" value={empForm.id_categoria} onChange={e => setEmpForm({ ...empForm, id_categoria: e.target.value })}>
+                <select className="form-select" value={empForm.id_categoria} onChange={e => setEmpForm({ ...empForm, id_categoria: e.target.value })} required>
                   <option value="">Seleccionar</option>
                   {categorias.map(c => (
                     <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
@@ -112,7 +137,7 @@ function Registro() {
             </div>
             <div className="form-group">
               <label className="form-label">Descripción</label>
-              <textarea className="form-textarea" rows={3} value={empForm.descripcion} onChange={e => setEmpForm({ ...empForm, descripcion: e.target.value })} placeholder="Contanos sobre tu emprendimiento..." />
+              <textarea className="form-textarea" rows={3} value={empForm.descripcion} onChange={e => setEmpForm({ ...empForm, descripcion: e.target.value })} placeholder="Contanos sobre tu emprendimiento..." required />
             </div>
             <button type="submit" className="btn btn-primary btn-block">Registrar emprendimiento</button>
           </form>

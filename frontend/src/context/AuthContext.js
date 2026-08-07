@@ -49,6 +49,22 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const registroModerador = async (nombre_usuario, email, password) => {
+    const { data } = await api.post('/auth/registro/moderador', { nombre_usuario, email, password });
+    return data;
+  };
+
+  const crearReporte = async (id_reportante, id_reportado, id_producto, motivo, comentarios) => {
+    const { data } = await api.post('/reportes', { id_reportante, id_reportado, id_producto, motivo, comentarios });
+    return data;
+  };
+
+  const ocultarProducto = async (id) => {
+    const { data } = await api.post(`/productos/${id}/ocultar`);
+    console.log(data)
+    return data;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
@@ -58,7 +74,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, emprendimiento, loading, login, registroCliente, registroEmprendedor, logout }}>
+    <AuthContext.Provider value={{ usuario, emprendimiento, loading, login, registroCliente, registroEmprendedor, registroModerador, crearReporte, ocultarProducto, logout }}>
       {children}
     </AuthContext.Provider>
   );
