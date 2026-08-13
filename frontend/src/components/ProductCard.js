@@ -27,6 +27,7 @@ function ProductCard({ producto }) {
   const rawUrl = getImageUrl(producto);
   const imagen = resolveUrl(rawUrl) || PLACEHOLDER;
 
+
   return (
     <div className="card">
       <img src={imagen} alt={producto.nombre} className="card-img" />

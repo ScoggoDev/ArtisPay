@@ -41,6 +41,12 @@ function Home() {
       .catch((err) => console.error('Error al cargar emprendedor destacado:', err));
   }, []);
 
+  function resolveUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
+    return url;
+  }
+
   // lógica para el carrusel //
   const [itemsToShow, setItemsToShow] = useState(1);
 
@@ -88,7 +94,9 @@ function Home() {
           </p>
           <div className="hero-actions">
             <Link to="/catalogo" className="btn btn-primary btn-lg">Explorar catálogo</Link>
-            <Link to="/registro" className="btn btn-secondary btn-lg">Soy emprendedor</Link>
+            {
+              !usuario && (<Link to="/registro" className="btn btn-secondary btn-lg">Soy emprendedor</Link>)
+            }
           </div>
         </div>
         <div className="hero-decoration" />
@@ -117,7 +125,7 @@ function Home() {
               <div className="featured-profile">
                 {featured.perfil.imagen_perfil ? (
                   <img
-                    src={featured.perfil.imagen_perfil}
+                    src={resolveUrl(featured.perfil.imagen_perfil)}
                     alt={featured.perfil.nombre}
                     className="featured-avatar"
                   />
@@ -133,7 +141,7 @@ function Home() {
                   {featured.perfil.id_emprendimiento && (
                     <Link
                       to={`/emprendedor/${featured.perfil.id_emprendimiento}`}
-                      style={{ fontWeight : 'bold' }}
+                      style={{ fontWeight: 'bold' }}
                     >
                       Ver perfil completo &rarr;
                     </Link>
@@ -144,7 +152,7 @@ function Home() {
               {/* Carrusel de Productos */}
               {featured.productos && featured.productos.length > 0 && (
                 <div className="featured-products">
-                  <h4 style={{margin:'0.5rem'}} >Productos destacados de {featured.perfil.nombre}</h4>
+                  <h4 style={{ margin: '0.5rem' }} >Productos destacados de {featured.perfil.nombre}</h4>
                   <div className="carousel-wrapper">
 
                     {/* Muestra la flecha previa solo si no caben todos los productos */}

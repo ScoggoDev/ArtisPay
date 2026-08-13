@@ -20,6 +20,12 @@ function ProductoDetalle() {
     api.get(`/productos/${id}`).then(r => setProducto(r.data)).catch(() => { });
   }, [id]);
 
+  function resolveUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
+    return url;
+  }
+
   const agregarFavorito = async () => {
     try {
       await api.post(`/favoritos/${id}`);
@@ -39,7 +45,7 @@ function ProductoDetalle() {
   const handleReportar = () => {
     setReportar(prev => {
       const nuevoEstado = !prev;
-      if (nuevoEstado) setOcultar(false); 
+      if (nuevoEstado) setOcultar(false);
       return nuevoEstado;
     });
   };
@@ -95,7 +101,7 @@ function ProductoDetalle() {
 
         <div className="detail-grid">
           <div>
-            <img src={imagen} alt={producto.nombre} className="detail-img" />
+            <img src={resolveUrl(imagen)} alt={producto.nombre} className="detail-img" />
             {producto.imagenes?.length > 1 && (
               <div className="detail-thumbs">
                 {producto.imagenes.map(img => (
@@ -150,7 +156,7 @@ function ProductoDetalle() {
                 </button>}
             </div>
 
-            
+
             {reportar && (
               <div className="report-box" style={{ marginTop: '1rem' }}>
                 <p>¿Estás seguro de que deseas reportar este producto?</p>
