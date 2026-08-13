@@ -3,13 +3,28 @@ import { Link } from 'react-router-dom';
 const PLACEHOLDER = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23F5EDE4'/%3E%3Ctext x='50%25' y='45%25' font-family='Georgia,serif' font-size='36' fill='%23D4A27F' text-anchor='middle' dominant-baseline='middle'%3E✦%3C/text%3E%3Ctext x='50%25' y='62%25' font-family='Georgia,serif' font-size='13' fill='%23B08060' text-anchor='middle' dominant-baseline='middle'%3ESin imagen%3C/text%3E%3C/svg%3E`;
 
 function resolveUrl(url) {
-  if (!url) return null;
+  if (!url || typeof url !== 'string') return null;
   if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
   return url;
 }
 
 function ProductCard({ producto }) {
-  const rawUrl = producto.imagenes?.[0]?.url;
+  const getImageUrl = (prod) => {
+    if (!prod) return null;
+    
+    if (typeof prod.imagenes === 'string') return prod.imagenes;
+    
+    if (typeof prod.imagen === 'string') return prod.imagen;
+    
+    if (Array.isArray(prod.imagenes) && prod.imagenes.length > 0) {
+      const first = prod.imagenes[0];
+      return typeof first === 'string' ? first : first?.url;
+    }
+
+    return null;
+  };
+
+  const rawUrl = getImageUrl(producto);
   const imagen = resolveUrl(rawUrl) || PLACEHOLDER;
 
   return (

@@ -370,7 +370,7 @@ a:hover { color: var(--terracotta-deep); }
 /* ===================== BADGES ===================== */
 .badge {
   display: inline-block;
-  padding: 0.25rem 0.7rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 50px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -760,6 +760,45 @@ tr:hover td { background: rgba(232, 115, 74, 0.03); }
 }
 .whatsapp-btn:hover { background: #1EBE57; color: white; transform: translateY(-1px); }
 
+
+.instagram-btn,
+.facebook-btn,
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  text-decoration: none;
+  border-radius: var(--radius-sm, 6px);
+  border: none;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+
+.instagram-btn:hover,
+.facebook-btn:hover,
+.social-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+
+.facebook-btn {
+  background-color: #1877F2;
+}
+
+.instagram-btn {
+  /* Gradiente oficial de Instagram */
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.social-btn {
+  background-color: #6c757d; /* Color neutro para otras redes */
+}
+
 /* ===================== EDIT SECTION ===================== */
 .edit-section {
   background: var(--warm-white);
@@ -826,4 +865,121 @@ tr:hover td { background: rgba(232, 115, 74, 0.03); }
   display: flex;
   gap: 0.5rem;
   margin-bottom: 2rem;
+}
+
+
+.featured-card {
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.featured-profile {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.featured-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color, #007bff);
+}
+
+.featured-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* ===================== CARRUSEL ===================== */
+.carousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.3s ease-in-out;
+}
+
+.carousel-arrow {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 2;
+}
+
+.carousel-arrow.prev { left: -15px; }
+.carousel-arrow.next { right: -15px; }
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.carousel-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: #ccc;
+  cursor: pointer;
+}
+
+.carousel-dots .dot.active {
+  background: var(--primary-color, #007bff);
+}
+
+/* carrusel */
+/* 1. Alineación del encabezado */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+/* Define cuántos elementos se muestran por slide mediante CSS variables */
+.carousel-slide {
+  --items-per-screen: 1; /* Por defecto 1 producto (Móvil) */
+  flex: 0 0 calc(100% / var(--items-per-screen));
+  max-width: calc(100% / var(--items-per-screen));
+  padding: 0 0.5rem; /* Espaciado entre tarjetas */
+  box-sizing: border-box;
+}
+
+/* Pantallas medianas (Tablets): 2 productos */
+@media (min-width: 640px) {
+  .carousel-slide {
+    --items-per-screen: 2;
+  }
+}
+
+/* Pantallas grandes (Desktop): 3 productos */
+@media (min-width: 1024px) {
+  .carousel-slide {
+    --items-per-screen: 3;
+  }
 }

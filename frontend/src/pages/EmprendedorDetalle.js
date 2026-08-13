@@ -22,6 +22,57 @@ function EmprendedorDetalle() {
     api.get(`/emprendimientos/${id}`).then(r => setEmp(r.data)).catch(() => { });
   }, [id]);
 
+  function resolveUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
+    return url;
+  }
+
+  function parseSocialLinks(redesStr) {
+    if (!redesStr) return [];
+
+    const items = redesStr.split(',').map(s => s.trim()).filter(Boolean);
+
+    return items.map((urlOrUser) => {
+      let url = urlOrUser;
+      let label = 'Red social';
+      let btnClass = 'social-btn';
+
+      if (!/^https?:\/\//i.test(url) && !url.startsWith('@')) {
+        url = `https://${url}`;
+      }
+
+      if (url.includes('instagram.com') || url.startsWith('@')) {
+        label = 'Instagram';
+        btnClass = 'instagram-btn';
+        if (url.startsWith('@')) {
+          url = `https://instagram.com/${url.substring(1)}`;
+        }
+      } else if (url.includes('facebook.com') || url.includes('fb.com')) {
+        label = 'Facebook';
+        btnClass = 'facebook-btn';
+      } else if (url.includes('tiktok.com')) {
+        label = 'TikTok';
+        btnClass = 'social-btn';
+      } else if (url.includes('x.com') || url.includes('twitter.com')) {
+        label = 'X (Twitter)';
+        btnClass = 'social-btn';
+      } else if (url.includes('linkedin.com')) {
+        label = 'LinkedIn';
+        btnClass = 'social-btn';
+      } else {
+        try {
+          const parsedUrl = new URL(url);
+          label = parsedUrl.hostname.replace('www.', '');
+        } catch (e) {
+          label = 'Red social';
+        }
+      }
+
+      return { label, url, btnClass };
+    });
+  }
+
   const handleReportar = () => {
     setReportar(prev => {
       const nuevoEstado = !prev;
@@ -66,7 +117,7 @@ function EmprendedorDetalle() {
       setMensaje(err.response?.data?.error || 'Error');
     }
   };
-
+  
   if (!emp) return <div className="container section"><p>Cargando...</p></div>;
 
   return (
@@ -80,34 +131,72 @@ function EmprendedorDetalle() {
         )}
         <div className="profile-hero">
 
-          <ArtisanLogo nombre={emp.nombre} id_categoria={emp.id_categoria} size={100} />
+          {emp.imagen_perfil ? (
+            <img src={resolveUrl(emp.imagen_perfil)} alt={emp.nombre} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <ArtisanLogo nombre={emp.nombre} id_categoria={emp.id_categoria} size={80} />
+          )}
           <h2>{emp.nombre}</h2>
           <p style={{ color: 'var(--text-light)', maxWidth: 500, margin: '0.5rem auto 1rem' }}>{emp.descripcion}</p>
           {emp.ubicacion && <p style={{ fontSize: '0.88rem', color: 'var(--text-light)' }}>{emp.ubicacion}</p>}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.8rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.8rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Botón WhatsApp */}
             {emp.telefono && (
-              <a href={`https://wa.me/${emp.telefono.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="whatsapp-btn">
+              <a
+                href={`https://wa.me/${emp.telefono.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="whatsapp-btn"
+              >
                 WhatsApp
               </a>
             )}
-            {emp.redes_sociales && (
-              <span className="badge badge-clay" style={{ fontSize: '0.82rem', padding: '0.4rem 0.8rem' }}>{emp.redes_sociales}</span>
+
+            {/* Botones de Redes Sociales dinámicos con sus colores correspondientes */}
+            {emp.redes_sociales && parseSocialLinks(emp.redes_sociales).map((red, index) => (
+              <a
+                key={index}
+                href={red.url}
+                target="_blank"
+                rel="noreferrer"
+                className={red.btnClass}
+              >
+                {red.label}
+              </a>
+            ))}
+
+            {/* Botón Reportar */}
+            {usuario && (
+              <button
+                className="btn btn-danger"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+                onClick={handleReportar}
+              >
+                Reportar
+              </button>
             )}
 
-            {usuario && <button className="btn btn-danger" style={{ fontSize: '0.75rem', width: '7%' }} onClick={handleReportar}>
-              Reportar
-            </button>}
-
-            {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') && empActivo && 
-              <button className="btn btn-danger" style={{fontSize: '0.75rem', width: '7%'}} onClick={handleBloquear}>
+            {/* Botones Admin / Moderador */}
+            {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') && empActivo && (
+              <button
+                className="btn btn-danger"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+                onClick={handleBloquear}
+              >
                 Bloquear
-              </button>}
-              {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') && !empActivo && 
-              <button className="btn badge-clay" style={{fontSize: '0.75rem', width: '7%'}} disabled>
-                Bloqueado
-              </button>}
-          </div>
+              </button>
+            )}
 
+            {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') && !empActivo && (
+              <button
+                className="btn badge-clay"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+                disabled
+              >
+                Bloqueado
+              </button>
+            )}
+          </div>
           {reportar && (
             <div className="report-box" style={{ marginTop: '1rem' }}>
               <p>¿Estás seguro de que deseas reportar este perfil?</p>

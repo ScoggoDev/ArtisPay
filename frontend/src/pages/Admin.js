@@ -71,7 +71,7 @@ function Admin() {
       const reportesActualizados = reportes.map(r => r.id_reporte === id ? { ...r, estado } : r);
       setReportes(ordenarReportes(reportesActualizados));
       setMensaje(`Reporte #${id} marcado como ${estado}`);
-      
+
       // si el modal de detalle está abierto con este reporte, cerramos o actualizamos //
       if (reporteSeleccionado?.id_reporte === id) {
         setShowDetalleModal(false);
@@ -223,10 +223,10 @@ function Admin() {
           <>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '1rem', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.9rem', fontWeight: 600 }}>Filtrar por estado</label>
-              <select 
-                className="form-control btn" 
-                style={{ width: 'auto', padding: '0.3rem 0.6rem', border: '1px solid var(--border)', backgroundColor: 'var(--background)', fontWeight: 500 }} 
-                value={filtroEstado} 
+              <select
+                className="form-control btn"
+                style={{ width: 'auto', padding: '0.3rem 0.6rem', border: '1px solid var(--border)', backgroundColor: 'var(--background)', fontWeight: 500 }}
+                value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
               >
                 <option value="todos">Todos</option>
@@ -273,7 +273,7 @@ function Admin() {
           </>
         )}
 
-       
+
         {/* modal para crear moderador */}
         {showModal && (
           <div className="modal-backdrop" style={{
@@ -424,22 +424,8 @@ function Admin() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setShowDetalleModal(false)}
-                >
-                  Cancelar
-                </button>
                 {reporteSeleccionado.estado === 'pendiente' && (
                   <>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={() => resolverReporte(reporteSeleccionado.id_reporte, 'descartado')}
-                    >
-                      Descartar
-                    </button>
                     <button
                       type="button"
                       className="btn btn-sage btn-sm"
@@ -447,8 +433,23 @@ function Admin() {
                     >
                       Resolver
                     </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => resolverReporte(reporteSeleccionado.id_reporte, 'descartado')}
+                    >
+                      Descartar
+                    </button>
                   </>
                 )}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setShowDetalleModal(false)}
+                >
+                  Cerrar
+                </button>
+
               </div>
             </div>
           </div>

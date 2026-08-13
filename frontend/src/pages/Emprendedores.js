@@ -2,13 +2,34 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ArtisanLogo from '../components/ArtisanLogo';
+import { useAuth } from '../context/AuthContext';
 
 function Emprendedores() {
+  const { usuario } = useAuth();
   const [emprendimientos, setEmprendimientos] = useState([]);
 
   useEffect(() => {
-    api.get('/emprendimientos').then(r => setEmprendimientos(r.data)).catch(() => {});
+    api.get('/emprendimientos').then(r => setEmprendimientos(r.data)).catch(() => { });
   }, []);
+
+  function resolveUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
+    return url;
+  }
+
+  const handleDestacado = (id_emprendimiento) => {
+    try {
+      api.put('/emprendimientos/emprendedor-destacado', { id_emprendimiento })
+        .then(() => {
+          setEmprendimientos(emprendimientos.map(e =>
+            e.id_emprendimiento === id_emprendimiento ? { ...e, destacado: true } : e
+          ));
+        });
+    } catch (error) {
+      console.error('Error al destacar emprendimiento:', error);
+    }
+  };
 
   return (
     <div className="page-enter">
@@ -23,11 +44,20 @@ function Emprendedores() {
           <div className="grid grid-4">
             {emprendimientos.map(e => (
               <div key={e.id_emprendimiento} className="emp-card">
-                <ArtisanLogo nombre={e.nombre} id_categoria={e.id_categoria} size={80} />
+                {e.imagen_perfil ? (
+                  <img src={resolveUrl(e.imagen_perfil)} alt={e.nombre} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <ArtisanLogo nombre={e.nombre} id_categoria={e.id_categoria} size={80} />
+                )}
                 <div className="emp-name">{e.nombre}</div>
                 <p className="emp-desc">{e.descripcion?.substring(0, 80)}</p>
                 {e.ubicacion && <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '0.8rem' }}>{e.ubicacion}</p>}
                 <Link to={`/emprendedor/${e.id_emprendimiento}`} className="btn btn-outline btn-sm">Ver perfil</Link>
+                {usuario?.tipo === 'admin' && (
+                  <button className="btn btn-outline btn-sm" style={{ marginTop: '0.5rem' }} onClick={() => handleDestacado(e.id_emprendimiento)}>
+                    Hacer emprendedor de la semana
+                  </button>
+                )}
               </div>
             ))}
           </div>
