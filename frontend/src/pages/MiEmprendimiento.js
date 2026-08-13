@@ -1,7 +1,33 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
+import { useNavigate } from 'react-router-dom';
+import ArtisanLogo from '../components/ArtisanLogo';
+
+
+// Corregir íconos por defecto de Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+const PAYSANDU_CENTER = [-32.317, -58.076];
+
+// Subcomponente para capturar los clics en el mapa
+function LocationPicker({ onSelectLocation }) {
+  useMapEvents({
+    click(e) {
+      onSelectLocation(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
 
 // Función para resolver URLs (LocalStorage o URL directa)
 function resolveUrl(url) {
@@ -60,6 +86,7 @@ function MiEmprendimiento() {
   const [showModal, setShowModal] = useState(false);
   const [showServicioModal, setShowServicioModal] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const navigate = useNavigate();
 
   // Estado local para los 3 campos de Redes Sociales
   const [socialFields, setSocialFields] = useState({ instagram: '', facebook: '', otra: '' });
@@ -74,6 +101,11 @@ function MiEmprendimiento() {
 
   // Referencia para el input file oculto de la imagen de perfil
   const profileFileInputRef = useRef(null);
+
+  // Referencia del marcador para obtener sus coordenadas al arrastrar
+  const markerRef = useRef(null);
+
+  const { usuario, logout } = useAuth();
 
   useEffect(() => {
     if (empCtx) {
@@ -110,6 +142,26 @@ function MiEmprendimiento() {
       flash(err.response?.data?.error || 'Error', 'error');
     }
   };
+
+  // Manejador de cambio de ubicación mediante el mapa
+  const handleLocationSelect = (lat, lng) => {
+    setEditForm(prev => ({
+      ...prev,
+      latitud: Number(lat.toFixed(6)),
+      longitud: Number(lng.toFixed(6))
+    }));
+  };
+
+  // Manejador al soltar el marcador arrastrado
+  const eventHandlers = useMemo(() => ({
+    dragend() {
+      const marker = markerRef.current;
+      if (marker != null) {
+        const { lat, lng } = marker.getLatLng();
+        handleLocationSelect(lat, lng);
+      }
+    },
+  }), []);
 
   // Manejador para cargar la imagen de perfil
   const handleProfileImageFile = (e) => {
@@ -157,7 +209,6 @@ function MiEmprendimiento() {
   const handleOpenEditModal = (producto) => {
     setEditingProductoId(producto.id_producto);
 
-    // Si las imágenes vienen como array o como string/URL
     let primeraImagen = '';
     if (Array.isArray(producto.imagenes) && producto.imagenes.length > 0) {
       primeraImagen = producto.imagenes[0];
@@ -173,7 +224,6 @@ function MiEmprendimiento() {
       imagenes: primeraImagen
     });
 
-    // Resolver la imagen para la vista previa
     if (primeraImagen) {
       setImagePreview(resolveUrl(primeraImagen));
     } else {
@@ -193,12 +243,10 @@ function MiEmprendimiento() {
       };
 
       if (editingProductoId) {
-        // Actualizar producto existente (UPDATE)
         const { data } = await api.put(`/productos/${editingProductoId}`, payload);
         setProductos(productos.map(p => p.id_producto === editingProductoId ? data : p));
         flash('Producto actualizado correctamente');
       } else {
-        // Crear nuevo producto (CREATE)
         const { data } = await api.post('/productos', payload);
         setProductos([...productos, data]);
         flash('Producto agregado');
@@ -250,6 +298,19 @@ function MiEmprendimiento() {
   if (!emp) return <div className="container section"><p>Cargando...</p></div>;
 
   const profileImageSrc = resolveUrl(editForm.imagen_perfil);
+  const position = [editForm.latitud || PAYSANDU_CENTER[0], editForm.longitud || PAYSANDU_CENTER[1]];
+
+
+  const handleDesactivar = async () => {
+    if (!window.confirm('¿Estás seguro de que querés desactivar tu cuenta?')) return;
+    try {
+      await api.put('/usuarios/me/desactivar');
+      logout();
+      navigate('/');
+    } catch {
+      setMensaje('Error al desactivar la cuenta');
+    }
+  };
 
   return (
     <div className="page-enter">
@@ -350,16 +411,14 @@ function MiEmprendimiento() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Ubicación</label>
-              <input className="form-input" value={editForm.ubicacion || ''} onChange={e => setEditForm({ ...editForm, ubicacion: e.target.value })} />
+              <label className="form-label">Ubicación (Dirección o Referencia)</label>
+              <input className="form-input" value={editForm.ubicacion || ''} onChange={e => setEditForm({ ...editForm, ubicacion: e.target.value })} placeholder="Ej: 18 de Julio y Montecaseros" />
             </div>
 
             {/* SECCIÓN REDES SOCIALES MULTIPLE */}
             <div className="form-group" style={{ marginBottom: '1.2rem' }}>
               <label className="form-label">Redes sociales</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-
-                {/* Instagram con el @ prefijado */}
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span style={{
                     padding: '0.55rem 0.8rem',
@@ -381,7 +440,6 @@ function MiEmprendimiento() {
                   />
                 </div>
 
-                {/* Facebook */}
                 <input
                   className="form-input"
                   value={socialFields.facebook}
@@ -389,7 +447,6 @@ function MiEmprendimiento() {
                   placeholder="Agregar Facebook (link completo, ej: https://facebook.com/miperfil)"
                 />
 
-                {/* Otra red social */}
                 <input
                   className="form-input"
                   value={socialFields.otra}
@@ -399,23 +456,41 @@ function MiEmprendimiento() {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Latitud</label>
-                <input className="form-input" type="number" step="any" value={editForm.latitud || ''} onChange={e => setEditForm({ ...editForm, latitud: parseFloat(e.target.value) || null })} placeholder="-32.317" />
+            {/* SECCIÓN SELECCIÓN DE UBICACIÓN EN EL MAPA */}
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label className="form-label">Marcar ubicación exacta en el mapa</label>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '0.5rem' }}>
+                Hacé clic en el mapa o arrastrá el pin para fijar la ubicación exacta de tu emprendimiento.
+              </p>
+              <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)', height: '300px' }}>
+                <MapContainer center={position} zoom={14} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <LocationPicker onSelectLocation={handleLocationSelect} />
+                  {editForm.latitud && editForm.longitud && (
+                    <Marker
+                      draggable={true}
+                      eventHandlers={eventHandlers}
+                      position={position}
+                      ref={markerRef}
+                    />
+                  )}
+                </MapContainer>
               </div>
-              <div className="form-group">
-                <label className="form-label">Longitud</label>
-                <input className="form-input" type="number" step="any" value={editForm.longitud || ''} onChange={e => setEditForm({ ...editForm, longitud: parseFloat(e.target.value) || null })} placeholder="-58.076" />
-              </div>
+              {editForm.latitud && editForm.longitud && (
+                <p style={{ fontSize: '0.78rem', color: '#666', marginTop: '6px' }}>
+                  Coordenadas seleccionadas: {editForm.latitud}, {editForm.longitud}
+                </p>
+              )}
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '1rem', marginTop: '-0.5rem' }}>
-              Podés obtener las coordenadas haciendo clic derecho en <a href="https://maps.google.com" target="_blank" rel="noreferrer">Google Maps</a>.
-            </p>
+
             <button type="submit" className="btn btn-primary">Guardar cambios</button>
           </form>
         </div>
 
+        {/* Mis productos */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3>Mis productos ({productos.length})</h3>
           <button className="btn btn-sage" onClick={handleOpenCreateModal}>+ Agregar producto</button>
@@ -431,8 +506,7 @@ function MiEmprendimiento() {
             {productos.map(p => (
               <div key={p.id_producto}>
                 <ProductCard producto={{ ...p, emprendimiento_nombre: emp.nombre }} />
-                {/* Botones de acción (Editar y Eliminar) */}
-                <div style={{ display: 'flex', gap: '0.5rem',  margin: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem', marginTop: '0.5rem' }}>
                   <button
                     className="btn btn-outline btn-sm"
                     style={{ flex: 1 }}
@@ -453,6 +527,7 @@ function MiEmprendimiento() {
           </div>
         )}
 
+        {/* Mis servicios */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '2rem 0 1.5rem' }}>
           <h3>Mis servicios ({servicios.length})</h3>
           <button className="btn btn-sage" onClick={() => setShowServicioModal(true)}>+ Agregar servicio</button>
@@ -484,6 +559,7 @@ function MiEmprendimiento() {
           </div>
         )}
 
+        {/* Modal Servicio */}
         {showServicioModal && (
           <div className="modal-overlay" onClick={() => setShowServicioModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -510,7 +586,7 @@ function MiEmprendimiento() {
           </div>
         )}
 
-        {/* Modal de Producto (Crear / Editar) */}
+        {/* Modal Producto */}
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -551,17 +627,40 @@ function MiEmprendimiento() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', gap: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-block" onClick={() => setShowModal(false)}>
-                    Cancelar  
-                </button>
-                
-                <button type="submit" className="btn btn-sage btn-block">
-                  {editingProductoId ? 'Guardar cambios' : 'Publicar producto'}
-                </button>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-sage btn-block">
+                    {editingProductoId ? 'Guardar cambios' : 'Publicar producto'}
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         )}
+
+        <div>
+          <h2 style={{ marginBottom: '1.5rem' }}>Mi perfil</h2>
+          {mensaje && (
+            <div className="alert alert-error">
+              {mensaje}
+              <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
+            </div>
+          )}
+          <div className="edit-section">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
+              <ArtisanLogo nombre={usuario.nombre_usuario} size={56} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{usuario.nombre_usuario}</div>
+                <div style={{ color: 'var(--text-light)', fontSize: '0.88rem' }}>{usuario.email}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <span className="badge badge-sage">Emprendedor</span>
+            </div>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1rem 0' }} />
+            <button className="btn btn-danger btn-sm" onClick={handleDesactivar}>Desactivar cuenta</button>
+          </div>
+        </div>
       </div>
     </div>
   );
