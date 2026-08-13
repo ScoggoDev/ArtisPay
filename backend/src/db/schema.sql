@@ -95,3 +95,13 @@ CREATE TABLE dbo.reportes (
     estado NVARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'resuelto', 'descartado')),
     fecha DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
+
+IF OBJECT_ID('dbo.emprendedor_destacado', 'U') IS NULL
+CREATE TABLE dbo.emprendedor_destacado (
+    id INT PRIMARY KEY DEFAULT 1,
+    id_emprendimiento INT NOT NULL,
+    fecha_actualizacion DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (id_emprendimiento) REFERENCES dbo.emprendimientos(id_emprendimiento) ON DELETE CASCADE,
+    CONSTRAINT chk_single_row CHECK (id = 1)
+);
+
