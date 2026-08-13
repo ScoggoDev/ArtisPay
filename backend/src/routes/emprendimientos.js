@@ -153,7 +153,7 @@ router.get('/:id', async (req, res) => {
   if (!emp) return res.status(404).json({ error: 'Emprendimiento no encontrado' });
 
   const { recordset: productos } = await query(
-    `SELECT * FROM dbo.productos WHERE id_emprendimiento = @id_emprendimiento`,
+    `SELECT * FROM dbo.productos WHERE id_emprendimiento = @id_emprendimiento and activo = 1`,
     { id_emprendimiento }
   );
 
