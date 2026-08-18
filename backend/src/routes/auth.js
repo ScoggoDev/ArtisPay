@@ -93,7 +93,7 @@ router.post('/registro/moderador', async (req, res) => {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
 
-  const { recordset: existentes } = await query('SELECT id_usuario FROM dbo.usuarios WHERE email = @email', 
+  const { recordset: existentes } = await query('SELECT id_usuario FROM dbo.usuarios WHERE email = @email',
     { email });
   if (existentes.length > 0) {
     return res.status(409).json({ error: 'El email ya está registrado' });
@@ -117,10 +117,31 @@ router.post('/registro/moderador', async (req, res) => {
   res.status(201).json({
     token,
     usuario: { id_usuario, nombre_usuario, email, tipo: 'moderador' },
-  }); 
+  });
 
-  
+
 });
+
+router.post('/registro/categoria', async (req, res) => {
+  const { nombre, descripcion } = req.body;
+
+  if (!nombre || !descripcion) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  const { recordset } = await query(
+    `INSERT INTO dbo.categorias (nombre, descripcion)
+     OUTPUT INSERTED.id_categoria
+     VALUES (@nombre, @descripcion)`,
+    { nombre, descripcion }
+  );
+  const id_categoria = recordset[0].id_categoria;
+
+  res.status(201).json({
+    categoria: { id_categoria, nombre, descripcion },
+  });
+});
+
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
