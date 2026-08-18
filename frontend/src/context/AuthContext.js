@@ -54,6 +54,11 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const registroCategoria = async (nombre, descripcion) => {
+    const { data } = await api.post('/auth/registro/categoria', { nombre, descripcion });
+    return data;
+  };
+
   const crearReporte = async (id_reportante, id_reportado, id_producto, motivo, comentarios) => {
     const { data } = await api.post('/reportes', { id_reportante, id_reportado, id_producto, motivo, comentarios });
     return data;
@@ -74,7 +79,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, emprendimiento, loading, login, registroCliente, registroEmprendedor, registroModerador, crearReporte, ocultarProducto, logout }}>
+    <AuthContext.Provider value={{ usuario, emprendimiento, loading, login, registroCliente, registroEmprendedor, registroModerador, registroCategoria, crearReporte, ocultarProducto, logout }}>
       {children}
     </AuthContext.Provider>
   );

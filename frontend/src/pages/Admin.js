@@ -4,13 +4,22 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function Admin() {
-  const { usuario, registroModerador } = useAuth();
-  const [stats, setStats] = useState(null);
-  const [usuarios, setUsuarios] = useState([]);
-  const [reportes, setReportes] = useState([]);
-  const [mensaje, setMensaje] = useState('');
-  const [tab, setTab] = useState('stats');
 
+  // estadísticas //
+  const [stats, setStats] = useState(null);
+
+  // categorías // 
+  const { categoria, registroCategoria } = useAuth();
+  const [categorias, setCategorias] = useState([]);
+  const [formDataCategoria, setFormDataCategoria] = useState({
+    nombre: '',
+    descripcion: ''
+  });
+  const [showModalCategoria, setShowModalCategoria] = useState(false);
+
+  // usuarios //
+  const { usuario, registroModerador } = useAuth();
+  const [usuarios, setUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     nombre_usuario: '',
@@ -19,10 +28,18 @@ function Admin() {
     confirmPassword: ''
   });
   const [modalError, setModalError] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  // reportes //
+  const [reportes, setReportes] = useState([]);
   const [reporteSeleccionado, setReporteSeleccionado] = useState(null);
   const [showDetalleModal, setShowDetalleModal] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todos');
+
+  // mensajes y estados //
+  const [mensaje, setMensaje] = useState('');
+  const [tab, setTab] = useState('stats');
+  const [loading, setLoading] = useState(false);
+
 
   useEffect(() => {
     if (usuario?.tipo === 'admin') {
@@ -37,7 +54,13 @@ function Admin() {
   useEffect(() => {
     if (tab === 'usuarios') cargarUsuarios();
     if (tab === 'reportes') cargarReportes();
+    if (tab === 'categorias') cargarCategorias();
   }, [tab]);
+
+
+  const cargarCategorias = () => {
+    api.get('/categorias').then(r => setCategorias(r.data)).catch(() => { });
+  };
 
   const cargarUsuarios = () => {
     api.get('/admin/usuarios').then(r => setUsuarios(r.data)).catch(() => { });
@@ -49,10 +72,13 @@ function Admin() {
     }).catch(() => { });
   };
 
-
   const ordenarReportes = (lista) => {
     const orden = { pendiente: 1, resuelto: 2, descartado: 3 };
     return [...lista].sort((a, b) => (orden[a.estado] || 99) - (orden[b.estado] || 99));
+  };
+
+  const handleChangeCategoria = (e) => {
+    setFormDataCategoria({ ...formDataCategoria, [e.target.name]: e.target.value });
   };
 
   const toggleUsuario = async (id, activo) => {
@@ -89,6 +115,39 @@ function Admin() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCrearCategoria = async (e) => {
+    e.preventDefault();
+    setModalError('');
+    setLoading(true);
+    try {
+      await registroCategoria(formDataCategoria.nombre, formDataCategoria.descripcion);
+
+      setMensaje('Categoría creada exitosamente');
+      setShowModalCategoria(false);
+      setFormDataCategoria({ nombre: '', descripcion: '' });
+
+      if (tab === 'categorias') cargarCategorias();
+
+    } catch (err) {
+      setModalError(err.response?.data?.error || 'Error al crear categoría');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEliminarCategoria = async (id_categoria) => {
+    setLoading(true);
+    try {
+      await api.delete(`/categorias/${id_categoria}`);
+      setMensaje('Categoría eliminada exitosamente');
+      if (tab === 'categorias') cargarCategorias();
+    } catch (err) {
+      setMensaje(err.response?.data?.error || 'Error al eliminar categoría');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCrearModerador = async (e) => {
@@ -150,6 +209,11 @@ function Admin() {
               Estadísticas
             </button>
           )}
+          {usuario?.tipo === 'admin' && (
+            <button className={`btn ${tab === 'categorias' ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab('categorias')}>
+              Categorías
+            </button>
+          )}
           <button className={`btn ${tab === 'usuarios' ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab('usuarios')}>
             Usuarios
           </button>
@@ -179,6 +243,110 @@ function Admin() {
           </div>
         )}
 
+
+        {tab === 'categorias' && (
+          <>
+            {usuario?.tipo === 'admin' && (
+              <button
+                className="btn btn-sm btn-secondary"
+                style={{ display: 'block', marginLeft: 'auto', marginBottom: '1rem' }}
+                onClick={() => setShowModalCategoria(true)}
+              >
+                Añadir categoría
+              </button>
+            )}
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                  {categorias.map(c => (
+                    <tr key={c.id_categoria}>
+                      <td>{c.id_categoria}</td>
+                      <td style={{ fontWeight: 600 }}>{c.nombre}</td>
+                      <td>{c.descripcion}</td>
+                      <td>
+                        <button className="btn btn-sm btn-danger" onClick={() => {
+                          handleEliminarCategoria(c.id_categoria);
+                        }}>
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* modal para crear categorías */}
+        {showModalCategoria && (
+          <div className="modal-backdrop" style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center',
+            alignItems: 'center', zIndex: 1000
+          }}>
+            <div className="modal-content" style={{
+              background: '#fff', padding: '2rem', borderRadius: '8px', width: '100%',
+              maxWidth: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}>
+              <h3 style={{ marginBottom: '1rem' }}>Crear categoría</h3>
+
+              {modalError && (
+                <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>
+                  {modalError}
+                </div>
+              )}
+
+              <form onSubmit={handleCrearCategoria}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.3rem' }}>Nombre</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    className="form-control"
+                    value={formDataCategoria.nombre}
+                    onChange={handleChangeCategoria}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.3rem' }}>Descripción</label>
+                  <input
+                    type="text"
+                    name="descripcion"
+                    className="form-control"
+                    value={formDataCategoria.descripcion}
+                    onChange={handleChangeCategoria}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => { setShowModalCategoria(false); setModalError(''); }}
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    disabled={loading}
+                  >
+                    {loading ? 'Guardando...' : 'Confirmar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {tab === 'usuarios' && (
           <>
             {usuario?.tipo === 'admin' && (
@@ -187,7 +355,7 @@ function Admin() {
                 style={{ display: 'block', marginLeft: 'auto', marginBottom: '1rem' }}
                 onClick={() => setShowModal(true)}
               >
-                Crear usuario moderador
+                Añadir usuario moderador
               </button>
             )}
 
@@ -272,7 +440,6 @@ function Admin() {
             </div>
           </>
         )}
-
 
         {/* modal para crear moderador */}
         {showModal && (
