@@ -23,6 +23,21 @@ router.get('/', async (req, res) => {
   res.json(recordset);
 });
 
+router.get('/:id', async (req, res) => {
+  const id_servicio = parseInt(req.params.id);
+
+  const { recordset } = await query(`
+    SELECT s.*, e.nombre AS emprendimiento_nombre
+    FROM dbo.servicios s
+    LEFT JOIN dbo.emprendimientos e ON e.id_emprendimiento = s.id_emprendimiento
+    WHERE s.id_servicio = @id_servicio AND s.activo = 1
+  `, { id_servicio });
+  const servicio = recordset[0];
+  if (!servicio) return res.status(404).json({ error: 'Servicio no encontrado' });
+
+  res.json(servicio);
+});
+
 router.post('/', authenticateToken, requireRole('emprendedor'), async (req, res) => {
   const { recordset: empRecord } = await query(
     'SELECT * FROM dbo.emprendimientos WHERE id_usuario = @id_usuario',
