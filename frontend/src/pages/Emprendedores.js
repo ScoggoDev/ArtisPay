@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 function Emprendedores() {
   const { usuario } = useAuth();
   const [emprendimientos, setEmprendimientos] = useState([]);
+  const [mensaje, setMensaje] = useState('');
+  const [msgType, setMsgType] = useState('success');
 
   useEffect(() => {
     api.get('/emprendimientos').then(r => setEmprendimientos(r.data)).catch(() => { });
@@ -26,14 +28,22 @@ function Emprendedores() {
             e.id_emprendimiento === id_emprendimiento ? { ...e, destacado: true } : e
           ));
         });
+      setMensaje(`Emprendimiento destacado`);
     } catch (error) {
-      console.error('Error al destacar emprendimiento:', error);
+      setMsgType('error');
+      setMensaje(`Error al destacar el emprendimiento: ${error.message}`);
     }
   };
 
   return (
     <div className="page-enter">
       <div className="container section">
+        {mensaje && (
+          <div className={`alert alert-${msgType}`}>
+            {mensaje}
+            <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
+          </div>
+        )}
         <h2 style={{ marginBottom: '1.5rem' }}>Emprendedores de Paysandú</h2>
         {emprendimientos.length === 0 ? (
           <div className="empty">

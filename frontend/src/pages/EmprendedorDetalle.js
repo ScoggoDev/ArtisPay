@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
+import ServiceCard from '../components/ServiceCard';
 import ArtisanLogo from '../components/ArtisanLogo';
 import { useAuth } from '../context/AuthContext';
 
@@ -117,7 +118,7 @@ function EmprendedorDetalle() {
       setMensaje(err.response?.data?.error || 'Error');
     }
   };
-  
+
   if (!emp) return <div className="container section"><p>Cargando...</p></div>;
 
   return (
@@ -259,6 +260,17 @@ function EmprendedorDetalle() {
             </div>
           )}
         </section>
+
+        {emp.servicios?.length > 0 && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>Servicios</h3>
+            <div className="grid grid-3">
+              {emp.servicios?.map(s => (
+                <ServiceCard key={s.id_servicio} servicio={{ ...s, emprendimiento_nombre: emp.nombre }} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

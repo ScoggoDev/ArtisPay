@@ -38,7 +38,7 @@ function ProductCard({ producto }) {
           {producto.descripcion?.length > 80 ? '...' : ''}
         </p>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <span className="price">${producto.precio}</span>
+          <span className="price">{producto.precio? `$${producto.precio}` : 'Consultar precio'}</span>
           {producto.categoria_nombre && (
             <span className="badge badge-terracotta">{producto.categoria_nombre}</span>
           )}
