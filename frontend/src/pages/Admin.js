@@ -16,6 +16,7 @@ function Admin() {
     descripcion: ''
   });
   const [showModalCategoria, setShowModalCategoria] = useState(false);
+  const [categoriaEditandoId, setCategoriaEditandoId] = useState(null);
 
   // usuarios //
   const { usuario, registroModerador } = useAuth();
@@ -122,19 +123,39 @@ function Admin() {
     setModalError('');
     setLoading(true);
     try {
-      await registroCategoria(formDataCategoria.nombre, formDataCategoria.descripcion);
+      if (categoriaEditandoId) {
+        await api.put(`/categorias/${categoriaEditandoId}`, formDataCategoria);
+        setMensaje('Categoría actualizada exitosamente');
+      } else {
+        await registroCategoria(formDataCategoria.nombre, formDataCategoria.descripcion);
+        setMensaje('Categoría creada exitosamente');
+      }
 
-      setMensaje('Categoría creada exitosamente');
       setShowModalCategoria(false);
       setFormDataCategoria({ nombre: '', descripcion: '' });
+      setCategoriaEditandoId(null);
 
       if (tab === 'categorias') cargarCategorias();
 
     } catch (err) {
-      setModalError(err.response?.data?.error || 'Error al crear categoría');
+      setModalError(err.response?.data?.error || 'Error al guardar categoría');
     } finally {
       setLoading(false);
     }
+  };
+
+  const abrirEditarCategoria = (cat) => {
+    setCategoriaEditandoId(cat.id_categoria);
+    setFormDataCategoria({ nombre: cat.nombre, descripcion: cat.descripcion || '' });
+    setModalError('');
+    setShowModalCategoria(true);
+  };
+
+  const abrirNuevaCategoria = () => {
+    setCategoriaEditandoId(null);
+    setFormDataCategoria({ nombre: '', descripcion: '' });
+    setModalError('');
+    setShowModalCategoria(true);
   };
 
   const handleEliminarCategoria = async (id_categoria) => {
@@ -250,7 +271,7 @@ function Admin() {
               <button
                 className="btn btn-sm btn-secondary"
                 style={{ display: 'block', marginLeft: 'auto', marginBottom: '1rem' }}
-                onClick={() => setShowModalCategoria(true)}
+                onClick={abrirNuevaCategoria}
               >
                 Añadir categoría
               </button>
@@ -268,11 +289,18 @@ function Admin() {
                       <td style={{ fontWeight: 600 }}>{c.nombre}</td>
                       <td>{c.descripcion}</td>
                       <td>
-                        <button className="btn btn-sm btn-danger" onClick={() => {
-                          handleEliminarCategoria(c.id_categoria);
-                        }}>
-                          Eliminar
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          {usuario?.tipo === 'admin' && (
+                            <button className="btn btn-sm btn-sage" onClick={() => abrirEditarCategoria(c)}>
+                              Editar
+                            </button>
+                          )}
+                          <button className="btn btn-sm btn-danger" onClick={() => {
+                            handleEliminarCategoria(c.id_categoria);
+                          }}>
+                            Eliminar
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -293,7 +321,7 @@ function Admin() {
               background: '#fff', padding: '2rem', borderRadius: '8px', width: '100%',
               maxWidth: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
             }}>
-              <h3 style={{ marginBottom: '1rem' }}>Crear categoría</h3>
+              <h3 style={{ marginBottom: '1rem' }}>{categoriaEditandoId ? 'Editar categoría' : 'Crear categoría'}</h3>
 
               {modalError && (
                 <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>
@@ -329,7 +357,7 @@ function Admin() {
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm"
-                    onClick={() => { setShowModalCategoria(false); setModalError(''); }}
+                    onClick={() => { setShowModalCategoria(false); setModalError(''); setCategoriaEditandoId(null); }}
                     disabled={loading}
                   >
                     Cancelar

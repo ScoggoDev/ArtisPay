@@ -16,6 +16,24 @@ router.get('/:id', async (req, res) => {
   res.json(recordset[0]);
 });
 
+router.put('/:id', async (req, res) => {
+  const { nombre, descripcion } = req.body;
+
+  if (!nombre || !descripcion) {
+    return res.status(400).json({ error: 'Campos obligatorios: nombre, descripcion' });
+  }
+
+  const { recordset } = await query(`
+    UPDATE dbo.categorias
+    SET nombre = @nombre, descripcion = @descripcion
+    OUTPUT INSERTED.*
+    WHERE id_categoria = @id_categoria
+  `, { nombre, descripcion, id_categoria: parseInt(req.params.id) });
+
+  if (!recordset[0]) return res.status(404).json({ error: 'Categoría no encontrada' });
+  res.json(recordset[0]);
+});
+
 router.delete('/:id', async (req, res) => {
 
   const { recordset: usoCategoria } = await query(`

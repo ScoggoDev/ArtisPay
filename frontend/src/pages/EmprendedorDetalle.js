@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 import ServiceCard from '../components/ServiceCard';
@@ -165,6 +165,17 @@ function EmprendedorDetalle() {
                 {red.label}
               </a>
             ))}
+
+            {/* Botón Ver en el mapa */}
+            {emp.latitud && emp.longitud && (
+              <Link
+                to={`/mapa?id=${emp.id_emprendimiento}`}
+                className="btn btn-ghost"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+              >
+                Ver en el mapa
+              </Link>
+            )}
 
             {/* Botón Reportar */}
             {usuario && (
