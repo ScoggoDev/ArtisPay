@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Link, useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import api from '../services/api';
@@ -58,15 +58,36 @@ function ItemsPreview({ id }) {
   );
 }
 
+function RecenterMap({ position, zoom }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (position) map.setView(position, zoom);
+  }, [position, zoom, map]);
+
+  return null;
+}
+
 function Mapa() {
   const [emprendimientos, setEmprendimientos] = useState([]);
   const [openId, setOpenId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const markerRefs = useRef({});
+
+  const targetId = searchParams.get('id') ? parseInt(searchParams.get('id')) : null;
 
   useEffect(() => {
     api.get('/emprendimientos').then(r => setEmprendimientos(r.data)).catch(() => {});
   }, []);
 
   const conUbicacion = emprendimientos.filter(e => e.latitud && e.longitud);
+  const target = targetId ? conUbicacion.find(e => e.id_emprendimiento === targetId) : null;
+
+  useEffect(() => {
+    if (target && markerRefs.current[target.id_emprendimiento]) {
+      markerRefs.current[target.id_emprendimiento].openPopup();
+    }
+  }, [target]);
 
   return (
     <div className="page-enter">
@@ -82,10 +103,12 @@ function Mapa() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            {target && <RecenterMap position={[target.latitud, target.longitud]} zoom={16} />}
             {conUbicacion.map(e => (
               <Marker
                 key={e.id_emprendimiento}
                 position={[e.latitud, e.longitud]}
+                ref={(ref) => { if (ref) markerRefs.current[e.id_emprendimiento] = ref; }}
                 eventHandlers={{ popupopen: () => setOpenId(e.id_emprendimiento) }}
               >
                 <Popup minWidth={200}>

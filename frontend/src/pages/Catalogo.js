@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 
 function Catalogo() {
+  const [searchParams] = useSearchParams();
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [filtros, setFiltros] = useState({ busqueda: '', categoria: '', precio_min: '', precio_max: '' });
-  const [busquedaInput, setBusquedaInput] = useState('');
+  const [filtros, setFiltros] = useState({
+    busqueda: searchParams.get('busqueda') || '',
+    categoria: searchParams.get('categoria') || '',
+    precio_min: '',
+    precio_max: '',
+  });
+  const [busquedaInput, setBusquedaInput] = useState(searchParams.get('busqueda') || '');
 
   useEffect(() => {
     api.get('/categorias').then(r => setCategorias(r.data)).catch(() => {});
