@@ -3,6 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
+const PLACEHOLDER = 'https://via.placeholder.com/600x400/F5EDE4/D4A27F?text=Sin+imagen';
+
+function resolveUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
+  return url;
+}
+
 function ProductoDetalle() {
   const { id } = useParams();
   const { usuario } = useAuth();
@@ -13,18 +21,18 @@ function ProductoDetalle() {
   const [ocultar, setOcultar] = useState(false);
   const [motivo_reporte, setMotivoReporte] = useState('');
   const [comentarios_reporte, setComentariosReporte] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Estados para el efecto Zoom
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
+
   const crearReporte = useAuth().crearReporte;
   const ocultarProducto = useAuth().ocultarProducto;
 
   useEffect(() => {
     api.get(`/productos/${id}`).then(r => setProducto(r.data)).catch(() => { });
   }, [id]);
-
-  function resolveUrl(url) {
-    if (!url || typeof url !== 'string') return null;
-    if (url.startsWith('ls:')) return localStorage.getItem(url) || null;
-    return url;
-  }
 
   const agregarFavorito = async () => {
     try {
@@ -37,10 +45,59 @@ function ProductoDetalle() {
     }
   };
 
+  // Obtener array limpio de URLs de imágenes
+  const getImageUrls = (prod) => {
+    if (!prod) return [];
+
+    let list = [];
+
+    if (Array.isArray(prod.imagenes)) {
+      list = prod.imagenes;
+    } else if (typeof prod.imagenes === 'string') {
+      try {
+        const parsed = JSON.parse(prod.imagenes);
+        list = Array.isArray(parsed) ? parsed : [prod.imagenes];
+      } catch {
+        list = [prod.imagenes];
+      }
+    } else if (typeof prod.imagen === 'string') {
+      list = [prod.imagen];
+    }
+
+    const resolvedList = list
+      .map(item => (typeof item === 'string' ? item : item?.url))
+      .map(url => resolveUrl(url))
+      .filter(Boolean);
+
+    return resolvedList;
+  };
+
   if (!producto) return <div className="container section"><p>Cargando producto...</p></div>;
 
-  const imagen = producto.imagenes?.[0]?.url || 'https://via.placeholder.com/600x400/F5EDE4/D4A27F?text=Sin+imagen';
+  const imagenes = getImageUrls(producto);
+  const totalImagenes = imagenes.length;
   const emp = producto.emprendimiento;
+
+  const handlePrev = () => {
+    setCurrentIndex(prev => (prev === 0 ? totalImagenes - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex(prev => (prev === totalImagenes - 1 ? 0 : prev + 1));
+  };
+
+  // Funciones para calcular la posición del ratón sobre la imagen
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomPos({ x, y });
+  };
+
+  const handleMouseEnter = () => setIsZoomed(true);
+  const handleMouseLeave = () => setIsZoomed(false);
+
+  const currentImage = totalImagenes > 0 ? imagenes[currentIndex] : PLACEHOLDER;
 
   const handleReportar = () => {
     setReportar(prev => {
@@ -57,7 +114,6 @@ function ProductoDetalle() {
       return nuevoEstado;
     });
   };
-
 
   const reportarProducto = async () => {
     if (!motivo_reporte || motivo_reporte.trim() === '') {
@@ -76,7 +132,6 @@ function ProductoDetalle() {
     }
   };
 
-
   const ocultarProd = async () => {
     try {
       await ocultarProducto(parseInt(id));
@@ -91,7 +146,7 @@ function ProductoDetalle() {
 
   return (
     <div className="page-enter">
-      <div className="container section">
+      <div className="container section" style={{minHeight: '78vh' }}>
         {mensaje && (
           <div className={`alert alert-${msgType}`}>
             {mensaje}
@@ -100,17 +155,149 @@ function ProductoDetalle() {
         )}
 
         <div className="detail-grid">
+          {/* SECCIÓN IMÁGENES / CARRUSEL CON ZOOM */}
           <div>
-            <img src={resolveUrl(imagen)} alt={producto.nombre} className="detail-img" />
-            {producto.imagenes?.length > 1 && (
-              <div className="detail-thumbs">
-                {producto.imagenes.map(img => (
-                  <img key={img.id_imagen} src={img.url} alt="" className="detail-thumb" />
+            <div
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onMouseMove={handleMouseMove}
+              style={{
+                position: 'relative',
+                width: '100%',
+                overflow: 'hidden',
+                borderRadius: 'var(--radius, 8px)',
+                cursor: 'zoom-in'
+              }}
+            >
+              <img
+                src={currentImage}
+                alt={producto.nombre}
+                className="detail-img"
+                style={{
+                  width: '100%',
+                  display: 'block',
+                  transition: isZoomed ? 'transform 0.1s ease-out' : 'transform 0.3s ease',
+                  transform: isZoomed ? 'scale(1.8)' : 'scale(1)',
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
+                }}
+              />
+
+              {/* Botones de navegación (se ocultan opcionalmente al hacer zoom para no estorbar) */}
+              {totalImagenes > 1 && (
+                <>
+                  <button
+                    onClick={handlePrev}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '12px',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '36px',
+                      height: '36px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      zIndex: 3,
+                      userSelect: 'none',
+                      opacity: isZoomed ? 0.2 : 1,
+                      transition: 'opacity 0.2s'
+                    }}
+                    title="Anterior"
+                  >
+                    &#10094;
+                  </button>
+
+                  <button
+                    onClick={handleNext}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      right: '12px',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '36px',
+                      height: '36px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      zIndex: 3,
+                      userSelect: 'none',
+                      opacity: isZoomed ? 0.2 : 1,
+                      transition: 'opacity 0.2s'
+                    }}
+                    title="Siguiente"
+                  >
+                    &#10095;
+                  </button>
+
+                  {/* Indicador de posición / Puntos */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      gap: '6px',
+                      zIndex: 3,
+                      opacity: isZoomed ? 0.2 : 1,
+                      transition: 'opacity 0.2s'
+                    }}
+                  >
+                    {imagenes.map((_, idx) => (
+                      <span
+                        key={idx}
+                        onClick={() => setCurrentIndex(idx)}
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s'
+                        }}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Miniaturas (Thumbnails) */}
+            {totalImagenes > 1 && (
+              <div className="detail-thumbs" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem', flexWrap: 'wrap' }}>
+                {imagenes.map((imgUrl, idx) => (
+                  <img
+                    key={idx}
+                    src={imgUrl}
+                    alt={`Miniatura ${idx + 1}`}
+                    className="detail-thumb"
+                    onClick={() => setCurrentIndex(idx)}
+                    style={{
+                      cursor: 'pointer',
+                      border: idx === currentIndex ? '2px solid var(--terracotta, #D4A27F)' : '2px solid transparent',
+                      opacity: idx === currentIndex ? 1 : 0.7,
+                      transition: 'all 0.2s ease',
+                      borderRadius: 'var(--radius-sm, 4px)'
+                    }}
+                  />
                 ))}
               </div>
             )}
           </div>
 
+          {/* DETALLES DEL PRODUCTO */}
           <div>
             <div style={{ marginBottom: '0.5rem' }}>
               <span className="badge badge-terracotta">{producto.categoria_nombre}</span>
@@ -145,27 +332,34 @@ function ProductoDetalle() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', padding: '2 rem' }}>
-              {usuario && <button className="btn btn-danger" style={{ marginTop: '1rem' }} onClick={handleReportar}>
-                Reportar
-              </button>}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', padding: '2rem 0 0 0' }}>
+              {usuario && (
+                <button className="btn btn-danger" style={{ marginTop: '1rem' }} onClick={handleReportar}>
+                  Reportar
+                </button>
+              )}
 
-              {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') &&
+              {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') && (
                 <button className="btn btn-danger" style={{ marginTop: '1rem' }} onClick={handleOcultar}>
                   Ocultar
-                </button>}
+                </button>
+              )}
             </div>
-
 
             {reportar && (
               <div className="report-box" style={{ marginTop: '1rem' }}>
                 <p>¿Estás seguro de que deseas reportar este producto?</p>
-                <form>
+                <form onSubmit={e => e.preventDefault()}>
                   <div className="form-group">
-                    <label for="reportMotive">Seleccione motivo</label>
+                    <label htmlFor="reportMotive">Seleccione motivo</label>
                     <br />
-                    <select className="form-control" id="reportMotive"
-                      value={motivo_reporte} onChange={(e) => setMotivoReporte(e.target.value)} required>
+                    <select
+                      className="form-control"
+                      id="reportMotive"
+                      value={motivo_reporte}
+                      onChange={(e) => setMotivoReporte(e.target.value)}
+                      required
+                    >
                       <option value="" disabled>Seleccione una opción</option>
                       <option value="Producto falso o engañoso">Producto falso o engañoso</option>
                       <option value="Producto no disponible">Producto no disponible</option>
@@ -175,9 +369,15 @@ function ProductoDetalle() {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label for="reportComents">Ingrese comentarios</label>
+                    <label htmlFor="reportComents">Ingrese comentarios</label>
                     <br />
-                    <textarea className="form-control" id="reportComents" rows="3" value={comentarios_reporte} onChange={(e) => setComentariosReporte(e.target.value)}></textarea>
+                    <textarea
+                      className="form-control"
+                      id="reportComents"
+                      rows="3"
+                      value={comentarios_reporte}
+                      onChange={(e) => setComentariosReporte(e.target.value)}
+                    />
                   </div>
                 </form>
                 <button className="btn btn-danger" onClick={reportarProducto} style={{ marginRight: '0.5rem' }}>
@@ -189,7 +389,7 @@ function ProductoDetalle() {
               </div>
             )}
 
-            {ocultar &&
+            {ocultar && (
               <div className="toast" role="alert" aria-live="assertive" aria-atomic="true" style={{ marginTop: '1rem', marginBottom: '1rem' }}>
                 <div className="toast-body">
                   ¿Desea ocultar este producto? Esta acción no se puede deshacer.
@@ -203,7 +403,8 @@ function ProductoDetalle() {
                     </button>
                   </div>
                 </div>
-              </div>}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ function Login() {
       <div className="auth-card">
         <h2>Bienvenido de vuelta</h2>
         {error && (
-          <div className="alert alert-error">
+          <div className="alert alert-error flash" >
             {error}
             <button className="alert-close" onClick={() => setError('')}>&times;</button>
           </div>
@@ -38,6 +39,15 @@ function Login() {
           <div className="form-group">
             <label className="form-label">Contraseña</label>
             <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} required />
+          </div>
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+            <input
+              type="checkbox"
+              id="show-pass-cliente"
+              checked={showPassword}
+              onChange={e => setShowPassword(e.target.checked)}
+            />
+            <label htmlFor="show-pass-cliente" style={{ cursor: 'pointer', userSelect: 'none' }}>Mostrar contraseñas</label>
           </div>
           <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: '0.5rem' }}>Ingresar</button>
         </form>

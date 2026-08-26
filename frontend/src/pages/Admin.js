@@ -193,7 +193,7 @@ function Admin() {
 
   return (
     <div className="page-enter">
-      <div className="container section">
+      <div className="container section" style={{minHeight: '78vh' }}>
         <h2 style={{ marginBottom: '1.5rem' }}>Panel de administración</h2>
 
         {mensaje && (
@@ -223,7 +223,7 @@ function Admin() {
         </div>
 
         {tab === 'stats' && stats && (
-          <div className="grid grid-4">
+          <div className="grid grid-4" style={{ paddingTop: '1rem' }}>
             <div className="stat-card">
               <div className="stat-number">{stats.total_usuarios}</div>
               <div className="stat-label">Usuarios</div>

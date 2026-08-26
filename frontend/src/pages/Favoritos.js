@@ -21,7 +21,7 @@ function Favoritos() {
   };
 
   return (
-    <div className="page-enter">
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', minHeight: '78vh' }}>
       <div className="container section">
         <h2 style={{ marginBottom: '1.5rem' }}>Mis favoritos</h2>
         {mensaje && (

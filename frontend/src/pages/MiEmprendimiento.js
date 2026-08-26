@@ -8,7 +8,6 @@ import ProductCard from '../components/ProductCard';
 import { useNavigate } from 'react-router-dom';
 import ArtisanLogo from '../components/ArtisanLogo';
 
-
 // Corregir íconos por defecto de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -91,18 +90,23 @@ function MiEmprendimiento() {
   // Estado local para los 3 campos de Redes Sociales
   const [socialFields, setSocialFields] = useState({ instagram: '', facebook: '', otra: '' });
 
-  // Estados para productos (Edición y Creación)
+  // Estados para productos (Edición y Creación con MÚLTIPLES IMÁGENES)
   const [editingProductoId, setEditingProductoId] = useState(null);
-  const [productoForm, setProductoForm] = useState({ nombre: '', descripcion: '', precio: '', id_categoria: '', imagenes: '' });
-  const [imagePreview, setImagePreview] = useState(null);
+  const [productoForm, setProductoForm] = useState({
+    nombre: '',
+    descripcion: '',
+    precio: '',
+    id_categoria: '',
+    imagenes: [] // Ahora es un Array
+  });
+  const [imagePreviews, setImagePreviews] = useState([]); // Array de previews
 
   const [servicios, setServicios] = useState([]);
   const [servicioForm, setServicioForm] = useState({ nombre: '', descripcion: '', precio: '' });
 
-  // Referencia para el input file oculto de la imagen de perfil
+  // Referencias de inputs
   const profileFileInputRef = useRef(null);
-
-  // Referencia del marcador para obtener sus coordenadas al arrastrar
+  const productFileInputRef = useRef(null);
   const markerRef = useRef(null);
 
   const { usuario, logout } = useAuth();
@@ -124,7 +128,7 @@ function MiEmprendimiento() {
 
   const flash = (msg, type = 'success') => { setMensaje(msg); setMsgType(type); };
 
-  // Actualizar redes sociales en editForm cada vez que cambia algún campo de redes
+  // Actualizar redes sociales
   const handleSocialChange = (field, value) => {
     const updated = { ...socialFields, [field]: value };
     setSocialFields(updated);
@@ -143,7 +147,6 @@ function MiEmprendimiento() {
     }
   };
 
-  // Manejador de cambio de ubicación mediante el mapa
   const handleLocationSelect = (lat, lng) => {
     setEditForm(prev => ({
       ...prev,
@@ -152,7 +155,6 @@ function MiEmprendimiento() {
     }));
   };
 
-  // Manejador al soltar el marcador arrastrado
   const eventHandlers = useMemo(() => ({
     dragend() {
       const marker = markerRef.current;
@@ -177,43 +179,72 @@ function MiEmprendimiento() {
     reader.readAsDataURL(file);
   };
 
-  // Manejador para eliminar/limpiar la imagen de perfil actual
   const handleRemoveProfileImage = () => {
     setEditForm(f => ({ ...f, imagen_perfil: '' }));
     if (profileFileInputRef.current) profileFileInputRef.current.value = '';
   };
 
+  // --- MANEJO DE MÚLTIPLES IMÁGENES DE PRODUCTOS (HASTA 5) ---
   const handleImageFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target.result;
-      const key = `ls:artispay_img_${Date.now()}`;
-      localStorage.setItem(key, base64);
-      setProductoForm(f => ({ ...f, imagenes: key }));
-      setImagePreview(base64);
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const currentImages = productoForm.imagenes || [];
+    if (currentImages.length + files.length > 5) {
+      flash('Solo podés agregar hasta 5 imágenes por producto.', 'error');
+      if (productFileInputRef.current) productFileInputRef.current.value = '';
+      return;
+    }
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result;
+        const key = `ls:artispay_img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        localStorage.setItem(key, base64);
+
+        setProductoForm(prev => ({
+          ...prev,
+          imagenes: [...prev.imagenes, key]
+        }));
+        setImagePreviews(prev => [...prev, base64]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (productFileInputRef.current) productFileInputRef.current.value = '';
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setProductoForm(prev => ({
+      ...prev,
+      imagenes: prev.imagenes.filter((_, idx) => idx !== indexToRemove)
+    }));
+    setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   // Abrir modal en modo creación
   const handleOpenCreateModal = () => {
     setEditingProductoId(null);
-    setProductoForm({ nombre: '', descripcion: '', precio: '', id_categoria: '', imagenes: '' });
-    setImagePreview(null);
+    setProductoForm({ nombre: '', descripcion: '', precio: '', id_categoria: '', imagenes: [] });
+    setImagePreviews([]);
     setShowModal(true);
   };
 
-  // Abrir modal en modo edición con datos cargados
+  // Abrir modal en modo edición
   const handleOpenEditModal = (producto) => {
     setEditingProductoId(producto.id_producto);
 
-    let primeraImagen = '';
-    if (Array.isArray(producto.imagenes) && producto.imagenes.length > 0) {
-      primeraImagen = producto.imagenes[0];
+    let listImagenes = [];
+    if (Array.isArray(producto.imagenes)) {
+      listImagenes = producto.imagenes;
     } else if (typeof producto.imagenes === 'string') {
-      primeraImagen = producto.imagenes;
+      try {
+        const parsed = JSON.parse(producto.imagenes);
+        listImagenes = Array.isArray(parsed) ? parsed : [producto.imagenes];
+      } catch {
+        listImagenes = producto.imagenes ? [producto.imagenes] : [];
+      }
     }
 
     setProductoForm({
@@ -221,39 +252,34 @@ function MiEmprendimiento() {
       descripcion: producto.descripcion || '',
       precio: producto.precio || '',
       id_categoria: producto.id_categoria || '',
-      imagenes: primeraImagen
+      imagenes: listImagenes
     });
 
-    if (primeraImagen) {
-      setImagePreview(resolveUrl(primeraImagen));
-    } else {
-      setImagePreview(null);
-    }
-
+    setImagePreviews(listImagenes.map(img => resolveUrl(img)).filter(Boolean));
     setShowModal(true);
   };
 
-  // Manejador unificado para guardar (Crear o Editar)
+  // Manejador unificado para guardar
   const handleSaveProducto = async (e) => {
     e.preventDefault();
     try {
       const payload = {
         ...productoForm,
-        imagenes: productoForm.imagenes ? [productoForm.imagenes] : [],
+        imagenes: productoForm.imagenes
       };
 
       if (editingProductoId) {
         const { data } = await api.put(`/productos/${editingProductoId}`, payload);
         setProductos(productos.map(p => p.id_producto === editingProductoId ? data : p));
-        flash('Producto actualizado correctamente');
+        flash('Producto actualizado correctamente', 'success');
       } else {
         const { data } = await api.post('/productos', payload);
         setProductos([...productos, data]);
-        flash('Producto agregado');
+        flash('Producto agregado', 'success');
       }
 
-      setProductoForm({ nombre: '', descripcion: '', precio: '', id_categoria: '', imagenes: '' });
-      setImagePreview(null);
+      setProductoForm({ nombre: '', descripcion: '', precio: '', id_categoria: '', imagenes: [] });
+      setImagePreviews([]);
       setEditingProductoId(null);
       setShowModal(false);
     } catch (err) {
@@ -269,7 +295,7 @@ function MiEmprendimiento() {
       setServicios([...servicios, data]);
       setServicioForm({ nombre: '', descripcion: '', precio: '' });
       setShowServicioModal(false);
-      flash('Servicio agregado');
+      flash('Servicio agregado', 'success');
     } catch (err) {
       flash(err.response?.data?.error || 'Error', 'error');
     }
@@ -279,7 +305,7 @@ function MiEmprendimiento() {
     try {
       await api.delete(`/servicios/${id}`);
       setServicios(servicios.filter(s => s.id_servicio !== id));
-      flash('Servicio eliminado');
+      flash('Servicio eliminado', 'success');
     } catch (err) {
       flash(err.response?.data?.error || 'Error', 'error');
     }
@@ -289,7 +315,7 @@ function MiEmprendimiento() {
     try {
       await api.delete(`/productos/${id}`);
       setProductos(productos.filter(p => p.id_producto !== id));
-      flash('Producto eliminado');
+      flash('Producto eliminado', 'success');
     } catch (err) {
       flash(err.response?.data?.error || 'Error', 'error');
     }
@@ -299,7 +325,6 @@ function MiEmprendimiento() {
 
   const profileImageSrc = resolveUrl(editForm.imagen_perfil);
   const position = [editForm.latitud || PAYSANDU_CENTER[0], editForm.longitud || PAYSANDU_CENTER[1]];
-
 
   const handleDesactivar = async () => {
     if (!window.confirm('¿Estás seguro de que querés desactivar tu cuenta?')) return;
@@ -318,7 +343,7 @@ function MiEmprendimiento() {
         <h2 style={{ marginBottom: '1.5rem' }}>Mi Taller</h2>
 
         {mensaje && (
-          <div className={`alert alert-${msgType}`}>
+          <div className={`alert alert-${msgType} flash`}>
             {mensaje}
             <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
           </div>
@@ -462,7 +487,7 @@ function MiEmprendimiento() {
               <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '0.5rem' }}>
                 Hacé clic en el mapa o arrastrá el pin para fijar la ubicación exacta de tu emprendimiento.
               </p>
-              <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)', height: '300px' }}>
+              <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)', height: '300px', position: 'sticky' }}>
                 <MapContainer center={position} zoom={14} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -586,7 +611,7 @@ function MiEmprendimiento() {
           </div>
         )}
 
-        {/* Modal Producto */}
+        {/* Modal Producto con Múltiples Imágenes */}
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -618,13 +643,64 @@ function MiEmprendimiento() {
                     </select>
                   </div>
                 </div>
+
+                {/* SECCIÓN DE IMÁGENES MULTIPLE */}
                 <div className="form-group">
-                  <label className="form-label">Imagen del producto</label>
-                  <input type="file" accept="image/png,image/jpeg,image/webp" className="form-input" onChange={handleImageFile} style={{ padding: '0.4rem' }} />
-                  {imagePreview && (
-                    <img src={imagePreview} alt="preview" style={{ marginTop: '0.6rem', width: '100%', height: 140, objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />
+                  <label className="form-label">Imágenes del producto (máx. 5)</label>
+                  <input
+                    type="file"
+                    ref={productFileInputRef}
+                    multiple
+                    accept="image/png,image/jpeg,image/webp"
+                    className="form-input"
+                    onChange={handleImageFile}
+                    style={{ padding: '0.4rem' }}
+                    disabled={productoForm.imagenes?.length >= 5}
+                  />
+                  <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '0.3rem' }}>
+                    {productoForm.imagenes?.length || 0} de 5 imágenes cargadas
+                  </small>
+
+                  {/* Previews en miniatura */}
+                  {imagePreviews.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '0.5rem', marginTop: '0.8rem' }}>
+                      {imagePreviews.map((src, index) => (
+                        <div key={index} style={{ position: 'relative', width: '100%', height: '70px' }}>
+                          <img
+                            src={src}
+                            alt={`Preview ${index + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              background: '#dc3545',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              lineHeight: '1',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="Eliminar imagen"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', gap: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-block" onClick={() => setShowModal(false)}>
                     Cancelar
@@ -640,12 +716,6 @@ function MiEmprendimiento() {
 
         <div>
           <h2 style={{ marginBottom: '1.5rem' }}>Mi perfil</h2>
-          {mensaje && (
-            <div className="alert alert-error">
-              {mensaje}
-              <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
-            </div>
-          )}
           <div className="edit-section">
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
               <ArtisanLogo nombre={usuario.nombre_usuario} size={56} />
