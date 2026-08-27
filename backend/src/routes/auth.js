@@ -151,12 +151,17 @@ router.post('/login', async (req, res) => {
   }
 
   const { recordset } = await query(
-    'SELECT * FROM dbo.usuarios WHERE email = @email AND activo = 1',
+    'SELECT * FROM dbo.usuarios WHERE email = @email',
     { email }
   );
   const usuario = recordset[0];
+
   if (!usuario) {
-    return res.status(401).json({ error: 'Credenciales inválidas' });
+    return res.status(404).json({ error: 'Usuario no registrado' });
+  }
+
+  if (!usuario.activo) {
+    return res.status(403).json({ error: 'Usuario bloqueado' });
   }
 
   const valid = await bcrypt.compare(password, usuario.password_hash);
@@ -177,9 +182,13 @@ router.post('/login', async (req, res) => {
 
   res.json({
     token,
-    usuario: { id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario, email: usuario.email, tipo: usuario.tipo },
+    usuario: {
+      id_usuario: usuario.id_usuario,
+      nombre_usuario: usuario.nombre_usuario,
+      email: usuario.email,
+      tipo: usuario.tipo
+    },
     emprendimiento: empRecord[0] || null,
   });
 });
-
 module.exports = router;
