@@ -14,6 +14,8 @@ import Favoritos from './pages/Favoritos';
 import Perfil from './pages/Perfil';
 import Admin from './pages/Admin';
 import Mapa from './pages/Mapa';
+import { OlvideContrasena } from './pages/OlvideContrasena';
+import { RecuperacionContrasena } from './pages/RecuperacionContrasena';
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
             <Route path="/perfil" element={<Perfil />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/mapa" element={<Mapa />} />
+            <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
+            <Route path="/reset-password" element={<RecuperacionContrasena />} />
           </Routes>
         </main>
         <footer className="footer">

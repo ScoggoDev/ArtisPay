@@ -38,7 +38,7 @@ function Login() {
           </div>
           <div className="form-group">
             <label className="form-label">Contraseña</label>
-            <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} required />
+            <input type={showPassword ? 'text' : 'password'} className="form-input" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
           <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
             <input
@@ -49,11 +49,15 @@ function Login() {
             />
             <label htmlFor="show-pass-cliente" style={{ cursor: 'pointer', userSelect: 'none' }}>Mostrar contraseñas</label>
           </div>
+          <p style={{ textAlign: 'center', marginTop: '1.2rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
+            Olvidé mi contraseña <Link to="/olvide-contrasena">Restablecer contraseña</Link>
+          </p>
           <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: '0.5rem' }}>Ingresar</button>
         </form>
         <p style={{ textAlign: 'center', marginTop: '1.2rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
           ¿No tenés cuenta? <Link to="/registro">Registrate</Link>
         </p>
+
       </div>
     </div>
   );
