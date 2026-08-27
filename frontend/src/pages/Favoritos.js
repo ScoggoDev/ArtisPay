@@ -25,7 +25,7 @@ function Favoritos() {
       <div className="container section">
         <h2 style={{ marginBottom: '1.5rem' }}>Mis favoritos</h2>
         {mensaje && (
-          <div className="alert alert-info">
+          <div className="alert alert-info flash">
             {mensaje}
             <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
           </div>

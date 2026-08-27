@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -95,13 +95,13 @@ function Registro() {
               <label className="form-label">Confirmar contraseña</label>
               <input type={showPassword ? 'text' : 'password'} className="form-input" value={clienteForm.confirm_password} onChange={e => setClienteForm({ ...clienteForm, confirm_password: e.target.value })} required />
             </div>
-            
+
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
-              <input 
-                type="checkbox" 
-                id="show-pass-cliente" 
-                checked={showPassword} 
-                onChange={e => setShowPassword(e.target.checked)} 
+              <input
+                type="checkbox"
+                id="show-pass-cliente"
+                checked={showPassword}
+                onChange={e => setShowPassword(e.target.checked)}
               />
               <label htmlFor="show-pass-cliente" style={{ cursor: 'pointer', userSelect: 'none' }}>Mostrar contraseñas</label>
             </div>
@@ -129,18 +129,18 @@ function Registro() {
               <label className="form-label">Contraseña</label>
               <input type={showPassword ? 'text' : 'password'} className="form-input" value={empForm.password} onChange={e => setEmpForm({ ...empForm, password: e.target.value })} required />
             </div>
-          
+
             <div className="form-group">
               <label className="form-label">Confirmar contraseña</label>
               <input type={showPassword ? 'text' : 'password'} className="form-input" value={empForm.confirm_password} onChange={e => setEmpForm({ ...empForm, confirm_password: e.target.value })} required />
             </div>
 
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
-              <input 
-                type="checkbox" 
-                id="show-pass-emp" 
-                checked={showPassword} 
-                onChange={e => setShowPassword(e.target.checked)} 
+              <input
+                type="checkbox"
+                id="show-pass-emp"
+                checked={showPassword}
+                onChange={e => setShowPassword(e.target.checked)}
               />
               <label htmlFor="show-pass-emp" style={{ cursor: 'pointer', userSelect: 'none' }}>Mostrar contraseñas</label>
             </div>
@@ -167,6 +167,9 @@ function Registro() {
             <button type="submit" className="btn btn-primary btn-block">Registrar emprendimiento</button>
           </form>
         )}
+        <p style={{ textAlign: 'center', marginTop: '1.2rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
+          ¿Ya tenés cuenta? <Link to="/login">Inicia sesión</Link>
+        </p>
       </div>
     </div>
   );

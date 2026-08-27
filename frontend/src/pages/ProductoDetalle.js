@@ -148,7 +148,7 @@ function ProductoDetalle() {
     <div className="page-enter">
       <div className="container section" style={{minHeight: '78vh' }}>
         {mensaje && (
-          <div className={`alert alert-${msgType}`}>
+          <div className={`alert alert-${msgType} flash`}>
             {mensaje}
             <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
           </div>

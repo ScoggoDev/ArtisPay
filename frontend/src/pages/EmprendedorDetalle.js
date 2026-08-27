@@ -125,7 +125,7 @@ function EmprendedorDetalle() {
     <div className="page-enter">
       <div className="container">
         {mensaje && (
-          <div className={`alert alert-${msgType}`}>
+          <div className={`alert alert-${msgType} flash`}>
             {mensaje}
             <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
           </div>
@@ -171,7 +171,7 @@ function EmprendedorDetalle() {
               <Link
                 to={`/mapa?id=${emp.id_emprendimiento}`}
                 className="btn btn-ghost"
-                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+                style={{ padding: '0.4rem 0.8rem' }}
               >
                 Ver en el mapa
               </Link>
@@ -181,7 +181,7 @@ function EmprendedorDetalle() {
             {usuario && (
               <button
                 className="btn btn-danger"
-                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+                style={{ padding: '0.4rem 0.8rem' }}
                 onClick={handleReportar}
               >
                 Reportar
@@ -216,7 +216,7 @@ function EmprendedorDetalle() {
                 <div className="form-group">
                   <label for="reportMotive">Seleccione motivo</label>
                   <br />
-                  <select className="form-control" id="reportMotive"
+                  <select className="form-control" id="reportMotive" style={{ minHeight: '25px', minWidth: '260px'}}
                     value={motivo_reporte} onChange={(e) => setMotivoReporte(e.target.value)} required>
                     <option value="" disabled>Seleccione una opción</option>
                     <option value="Perfil falso o engañoso">Perfil falso o engañoso</option>
@@ -228,7 +228,7 @@ function EmprendedorDetalle() {
                 <div className="form-group">
                   <label for="reportComents">Ingrese comentarios</label>
                   <br />
-                  <textarea className="form-control" id="reportComents" rows="3" value={comentarios_reporte} onChange={(e) => setComentariosReporte(e.target.value)}></textarea>
+                  <textarea className="form-control" id="reportComents" style={{ minWidth: '260px' }} rows="3" value={comentarios_reporte} onChange={(e) => setComentariosReporte(e.target.value)}></textarea>
                 </div>
               </form>
               <button className="btn btn-danger" onClick={reportarPerfil} style={{ marginRight: '0.5rem' }}>
