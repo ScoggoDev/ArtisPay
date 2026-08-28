@@ -12,13 +12,12 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT, 10) || 465,
-  secure: true, // true para puerto 465, false para otros puertos
+  secure: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    // Permite certificados autofirmados solo para entorno de desarrollo
     rejectUnauthorized: false,
   },
 });
@@ -38,20 +37,18 @@ router.post('/forgot-password', async (req, res) => {
 
     const user = result.recordset[0];
 
-    // Respuesta neutra por seguridad
+
     if (!user) {
       return res.json({
         message: 'Si el correo existe en nuestro sistema, recibirás un enlace de recuperación.',
       });
     }
 
-    // CORREGIDO: Usar user.password_hash y user.id_usuario
     const secret = JWT_SECRET + user.password_hash;
     const token = jwt.sign({ id: user.id_usuario, email: user.email }, secret, {
       expiresIn: '15m',
     });
 
-    // CORREGIDO: Pasa id_usuario en la URL del mail
     const resetUrl = `http://localhost:3000/reset-password?token=${token}&id=${user.id_usuario}`;
 
     await transporter.sendMail({
@@ -94,14 +91,11 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Solicitud inválida' });
     }
 
-    // Verificar token usando la misma firma (JWT_SECRET + user.password_hash)
     const secret = JWT_SECRET + user.password_hash;
     jwt.verify(token, secret, { clockTolerance: 30 });
 
-    // Hashear la nueva clave
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
 
-    // Actualizar en SQL Server
     await pool
       .request()
       .input('NewHash', sql.VarChar, newPasswordHash)

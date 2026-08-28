@@ -58,11 +58,20 @@ IF OBJECT_ID('dbo.servicios', 'U') IS NULL
 CREATE TABLE dbo.servicios (
     id_servicio INT IDENTITY(1,1) PRIMARY KEY,
     id_emprendimiento INT NOT NULL REFERENCES dbo.emprendimientos(id_emprendimiento),
+    id_categoria INT NULL REFERENCES dbo.categorias(id_categoria),
     nombre NVARCHAR(200) NOT NULL,
     descripcion NVARCHAR(MAX) NULL,
     precio DECIMAL(10,2) NULL,
     activo BIT NOT NULL DEFAULT 1,
     fecha_creacion DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+IF OBJECT_ID('dbo.imagenes_servicio', 'U') IS NULL
+CREATE TABLE dbo.imagenes_servicio (
+    id_imagen INT IDENTITY(1,1) PRIMARY KEY,
+    id_servicio INT NOT NULL REFERENCES dbo.servicios(id_servicio),
+    url NVARCHAR(1000) NOT NULL,
+    orden INT NOT NULL DEFAULT 0
 );
 
 IF OBJECT_ID('dbo.favoritos', 'U') IS NULL

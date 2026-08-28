@@ -169,14 +169,25 @@ router.get('/:id', async (req, res) => {
   }));
 
   const { recordset: servicios } = await query(
-    `SELECT * FROM dbo.servicios WHERE id_emprendimiento = @id_emprendimiento`,
+    `SELECT * FROM dbo.servicios WHERE id_emprendimiento = @id_emprendimiento and activo = 1`,
     { id_emprendimiento }
   );
+
+   const { recordset: imagenes_servicio } = await query(`
+    SELECT i.* FROM dbo.imagenes_servicio i
+    INNER JOIN dbo.servicios s ON s.id_servicio = i.id_servicio
+    WHERE s.id_emprendimiento = @id_emprendimiento
+  `, { id_emprendimiento });
+
+  const servWithImages = servicios.map(s => ({
+    ...s,
+    imagenes: imagenes_servicio.filter(i => i.id_servicio === s.id_servicio),
+  }));
 
   res.json({
     ...emp,
     productos: prodsWithImages,
-    servicios,
+    servicios: servWithImages,
   });
 });
 
