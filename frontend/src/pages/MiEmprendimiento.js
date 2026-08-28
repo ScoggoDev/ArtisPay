@@ -107,6 +107,8 @@ function MiEmprendimiento() {
   // Referencias de inputs
   const profileFileInputRef = useRef(null);
   const productFileInputRef = useRef(null);
+  const servicioFileInputRef = useRef(null);
+
   const markerRef = useRef(null);
 
   const { usuario, logout } = useAuth();
@@ -222,6 +224,60 @@ function MiEmprendimiento() {
     }));
     setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
+
+
+  // --- MANEJO DE MÚLTIPLES IMÁGENES DE SERVICIOS (HASTA 5) ---
+  const handleServiceImageFile = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // Asegura que sea un array por si prev.imagenes no está inicializado
+    const currentImages = servicioForm.imagenes || [];
+
+    if (currentImages.length + files.length > 5) {
+      flash('Solo podés agregar hasta 5 imágenes por servicio.', 'error');
+      if (servicioFileInputRef.current) servicioFileInputRef.current.value = '';
+      return;
+    }
+
+    // Procesa todos los archivos de manera asíncrona
+    const processedFiles = await Promise.all(
+      files.map((file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const base64 = ev.target.result;
+            const key = `ls:artispay_img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            localStorage.setItem(key, base64);
+            resolve({ key, base64 });
+          };
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+
+    const newKeys = processedFiles.map(f => f.key);
+    const newPreviews = processedFiles.map(f => f.base64);
+
+    // Un solo re-render seguro
+    setServicioForm(prev => ({
+      ...prev,
+      imagenes: [...(prev.imagenes || []), ...newKeys]
+    }));
+
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+
+    if (servicioFileInputRef.current) servicioFileInputRef.current.value = '';
+  };
+
+  const handleRemoveServiceImage = (indexToRemove) => {
+    setServicioForm(prev => ({
+      ...prev,
+      imagenes: prev.imagenes.filter((_, idx) => idx !== indexToRemove)
+    }));
+    setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
 
   // Abrir modal en modo creación
   const handleOpenCreateModal = () => {
@@ -604,6 +660,64 @@ function MiEmprendimiento() {
                 <div className="form-group">
                   <label className="form-label">Precio (dejar vacío si es a convenir)</label>
                   <input className="form-input" type="number" step="0.01" value={servicioForm.precio} onChange={e => setServicioForm({ ...servicioForm, precio: e.target.value })} placeholder="Ej: 500" />
+                </div>
+
+                {/* SECCIÓN DE IMÁGENES MULTIPLE */}
+                <div className="form-group">
+                  <label className="form-label">Imágenes del servicio (máx. 5)</label>
+                  <input
+                    type="file"
+                    ref={servicioFileInputRef}
+                    multiple
+                    accept="image/png,image/jpeg,image/webp"
+                    className="form-input"
+                    onChange={handleServiceImageFile}
+                    style={{ padding: '0.4rem' }}
+                    disabled={servicioForm.imagenes?.length >= 5}
+                  />
+                  <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '0.3rem' }}>
+                    {servicioForm.imagenes?.length || 0} de 5 imágenes cargadas
+                  </small>
+
+                  {/* Previews en miniatura */}
+                  {imagePreviews.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '0.5rem', marginTop: '0.8rem' }}>
+                      {imagePreviews.map((src, index) => (
+                        <div key={index} style={{ position: 'relative', width: '100%', height: '70px' }}>
+                          <img
+                            src={src}
+                            alt={`Preview ${index + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveServiceImage(index)}
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              background: '#dc3545',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              lineHeight: '1',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="Eliminar imagen"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                  )}
                 </div>
                 <button type="submit" className="btn btn-sage btn-block">Publicar servicio</button>
               </form>

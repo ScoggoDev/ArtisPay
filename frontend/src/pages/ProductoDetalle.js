@@ -300,7 +300,7 @@ function ProductoDetalle() {
           {/* DETALLES DEL PRODUCTO */}
           <div>
             <div style={{ marginBottom: '0.5rem' }}>
-              <span className="badge badge-terracotta">{producto.categoria_nombre}</span>
+              <span className="badge badge-terracotta" style={{fontSize: '0.9rem', marginBottom: '0.8rem'}}>{producto.categoria_nombre}</span>
               {producto.destacado && <span className="badge badge-sunflower" style={{ marginLeft: '0.4rem' }}>Destacado</span>}
             </div>
             <h2 style={{ marginBottom: '0.5rem' }}>{producto.nombre}</h2>
