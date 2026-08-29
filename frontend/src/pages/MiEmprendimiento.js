@@ -97,9 +97,9 @@ function MiEmprendimiento() {
     descripcion: '',
     precio: '',
     id_categoria: '',
-    imagenes: [] // Ahora es un Array
+    imagenes: []  
   });
-  const [imagePreviews, setImagePreviews] = useState([]); // Array de previews
+  const [imagePreviews, setImagePreviews] = useState([]); 
 
   const [servicios, setServicios] = useState([]);
   const [servicioForm, setServicioForm] = useState({ nombre: '', descripcion: '', precio: '' });
@@ -394,8 +394,8 @@ function MiEmprendimiento() {
   };
 
   return (
-    <div className="page-enter">
-      <div className="container section">
+    <div className="page-enter container">
+      <div className="section">
         <h2 style={{ marginBottom: '1.5rem' }}>Mi Taller</h2>
 
         {mensaje && (

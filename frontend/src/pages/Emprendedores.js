@@ -36,8 +36,8 @@ function Emprendedores() {
   };
 
   return (
-    <div className="page-enter">
-      <div className="container section">
+    <div className="page-enter container">
+      <div className="section">
         {mensaje && (
           <div className={`alert alert-${msgType}`}>
             {mensaje}

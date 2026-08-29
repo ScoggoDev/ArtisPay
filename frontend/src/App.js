@@ -17,6 +17,7 @@ import Admin from './pages/Admin';
 import Mapa from './pages/Mapa';
 import { OlvideContrasena } from './pages/OlvideContrasena';
 import { RecuperacionContrasena } from './pages/RecuperacionContrasena';
+import MisSolicitudes from './pages/MisSolicitudes';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
             <Route path="/mapa" element={<Mapa />} />
             <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
             <Route path="/reset-password" element={<RecuperacionContrasena />} />
+            <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
           </Routes>
         </main>
         <footer className="footer">

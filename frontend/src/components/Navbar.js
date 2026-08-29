@@ -31,7 +31,10 @@ function Navbar() {
         {usuario ? (
           <>
             {usuario.tipo === 'emprendedor' && (
-              <li><Link to="/mi-emprendimiento" className="nav-link" onClick={close}>Mi Taller</Link></li>
+              <>
+                <li><Link to="/mi-emprendimiento" className="nav-link" onClick={close}>Mi taller</Link></li>
+                <li><Link to="/mis-solicitudes" className="nav-link" onClick={close}>Mis solicitudes</Link></li>
+              </>
             )}
             {(usuario.tipo === 'admin' || usuario.tipo === 'moderador') && (
               <li><Link to="/admin" className="nav-link" onClick={close}>Administrar</Link></li>
@@ -42,8 +45,8 @@ function Navbar() {
               <li><Link to="/favoritos" className="nav-link" onClick={close}>Favoritos</Link></li>
             }
             {
-              (usuario.tipo === 'cliente' && 
-              <li><Link to="/perfil" className="nav-link" onClick={close}>{usuario.nombre_usuario}</Link></li>)
+              (usuario.tipo === 'cliente' &&
+                <li><Link to="/perfil" className="nav-link" onClick={close}>{usuario.nombre_usuario}</Link></li>)
             }
             <li><button className="btn btn-ghost btn-sm" onClick={handleLogout}>Salir</button></li>
           </>

@@ -145,8 +145,8 @@ function ProductoDetalle() {
   };
 
   return (
-    <div className="page-enter">
-      <div className="container section" style={{minHeight: '78vh' }}>
+    <div className="page-enter container">
+      <div className="section" style={{minHeight: '78vh' }}>
         {mensaje && (
           <div className={`alert alert-${msgType} flash`}>
             {mensaje}

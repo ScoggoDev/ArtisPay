@@ -42,19 +42,21 @@ function ItemsPreview({ id }) {
   if (items.length === 0) return <p style={{ fontSize: '0.8rem', color: '#999', margin: '6px 0' }}>Sin productos ni servicios aún.</p>;
 
   return (
-    <ul style={{ listStyle: 'none', padding: 0, margin: '6px 0 8px' }}>
-      {items.map(item => (
-        <li key={`${item._tipo}-${item.id_producto || item.id_servicio}`} style={{ marginBottom: 5, fontSize: '0.82rem' }}>
-          <span style={tagStyle(item._tipo)}>{item._tipo === 'producto' ? 'Producto' : 'Servicio'}</span>
-          <span style={{ fontWeight: 600 }}>{item.nombre}</span>
-          {item.precio && (
-            <span style={{ color: '#E8734A', marginLeft: 6, fontWeight: 700 }}>
-              ${item.precio.toLocaleString('es-UY')}
-            </span>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className='container'>
+      <ul style={{ listStyle: 'none', padding: 0, margin: '6px 0 8px' }}>
+        {items.map(item => (
+          <li key={`${item._tipo}-${item.id_producto || item.id_servicio}`} style={{ marginBottom: 5, fontSize: '0.82rem' }}>
+            <span style={tagStyle(item._tipo)}>{item._tipo === 'producto' ? 'Producto' : 'Servicio'}</span>
+            <span style={{ fontWeight: 600 }}>{item.nombre}</span>
+            {item.precio && (
+              <span style={{ color: '#E8734A', marginLeft: 6, fontWeight: 700 }}>
+                ${item.precio.toLocaleString('es-UY')}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -77,7 +79,7 @@ function Mapa() {
   const targetId = searchParams.get('id') ? parseInt(searchParams.get('id')) : null;
 
   useEffect(() => {
-    api.get('/emprendimientos').then(r => setEmprendimientos(r.data)).catch(() => {});
+    api.get('/emprendimientos').then(r => setEmprendimientos(r.data)).catch(() => { });
   }, []);
 
   const conUbicacion = emprendimientos.filter(e => e.latitud && e.longitud);
@@ -90,8 +92,8 @@ function Mapa() {
   }, [target]);
 
   return (
-    <div className="page-enter">
-      <div className="container section">
+    <div className="page-enter container">
+      <div className="section">
         <h2 style={{ marginBottom: '0.5rem' }}>Mapa de Artesanos</h2>
         <p style={{ color: 'var(--text-light)', marginBottom: '1.5rem' }}>
           {conUbicacion.length} artesano{conUbicacion.length !== 1 ? 's' : ''} en Paysandú

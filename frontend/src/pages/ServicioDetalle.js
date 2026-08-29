@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -22,11 +22,21 @@ function ServicioDetalle() {
     const [motivo_reporte, setMotivoReporte] = useState('');
     const [comentarios_reporte, setComentariosReporte] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [showModalSolicitud, setShowModalSolicitud] = useState(false);
+    const [solicitudForm, setSolicitudForm] = useState({
+        emprendimiento: '',
+        usuario: '',
+        descripcion: '',
+        imagenes: []
+    });
+    const [imagePreviews, setImagePreviews] = useState([]);
+    const fileInputRef = useRef(null);
 
     // Estados para el efecto Zoom
     const [isZoomed, setIsZoomed] = useState(false);
     const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
 
+    const solicitarPresupuesto = useAuth().solicitarPresupuesto;
     const crearReporte = useAuth().crearReporte;
     const ocultarServicio = useAuth().ocultarServicio;
 
@@ -78,8 +88,6 @@ function ServicioDetalle() {
     const totalImagenes = imagenes.length;
     const emp = servicio.emprendimiento;
 
-    console.log(emp)
-
     const handlePrev = () => {
         setCurrentIndex(prev => (prev === 0 ? totalImagenes - 1 : prev - 1));
     };
@@ -100,6 +108,72 @@ function ServicioDetalle() {
     const handleMouseLeave = () => setIsZoomed(false);
 
     const currentImage = totalImagenes > 0 ? imagenes[currentIndex] : PLACEHOLDER;
+
+    // modal solicitar presupuesto // 
+    const handleSolicitarPresupuesto = () => {
+        setSolicitudForm({ descripcion: '', imagenes: [] });
+        setImagePreviews([]);
+        setShowModalSolicitud(true);
+    };
+
+    //  manejo de imágenes para solicitudes presupuesto //
+    const handleImageFile = (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        const currentImages = solicitudForm.imagenes || [];
+        if (currentImages.length + files.length > 5) {
+            setMensaje('Solo podés agregar hasta 5 imágenes por solicitud.', 'error');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        files.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const base64 = ev.target.result;
+                const key = `ls:artispay_img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                localStorage.setItem(key, base64);
+
+                setSolicitudForm(prev => ({
+                    ...prev,
+                    imagenes: [...prev.imagenes, key]
+                }));
+                setImagePreviews(prev => [...prev, base64]);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleRemoveImage = (indexToRemove) => {
+        setSolicitudForm(prev => ({
+            ...prev,
+            imagenes: prev.imagenes.filter((_, idx) => idx !== indexToRemove)
+        }));
+        setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    };
+
+
+    // envío de solicitud presupuesto // 
+    const crearSolicitud = async (e) => {
+        e.preventDefault();
+        if (!solicitudForm.descripcion.trim()) {
+            setMensaje('Solicitud debe contener una descripción');
+        }
+        try {
+            await solicitarPresupuesto(emp.id_emprendimiento, usuario.id_usuario, solicitudForm.descripcion);
+            setMensaje('Solicitud creada con éxito');
+            setMsgType('success');
+            setShowModalSolicitud(false);
+        } catch (error) {
+            setMensaje('Error al enviar la solicitud');
+            setMsgType('error');
+            console.log(error);
+        }
+    }
+
 
     const handleReportar = () => {
         setReportar(prev => {
@@ -147,8 +221,8 @@ function ServicioDetalle() {
     };
 
     return (
-        <div className="page-enter">
-            <div className="container section" style={{ minHeight: '78vh' }}>
+        <div className="page-enter container">
+            <div className="section" style={{ minHeight: '78vh' }}>
                 {mensaje && (
                     <div className={`alert alert-${msgType} flash`}>
                         {mensaje}
@@ -323,9 +397,14 @@ function ServicioDetalle() {
                         <p style={{ lineHeight: 1.7, color: 'var(--text-light)', marginBottom: '1.5rem' }}>{servicio.descripcion}</p>
 
                         {usuario && (
+                            <div style={{display: 'flex', gap: '1rem'}}>
                             <button className="btn btn-secondary" onClick={agregarFavorito} style={{ marginBottom: '1rem' }}>
                                 &#9829; Agregar a favoritos
                             </button>
+                            <button className="btn btn-primary" onClick={handleSolicitarPresupuesto} style={{ marginBottom: '1rem'}}>
+                                Solicitar presupuesto
+                            </button>
+                            </div>
                         )}
 
                         {emp && (
@@ -360,6 +439,83 @@ function ServicioDetalle() {
                                 </button>
                             )}
                         </div>
+
+                        {/* Modal solicitud presupuesto */}
+                        {showModalSolicitud && (
+                            <div className="modal-overlay" onClick={() => setShowModalSolicitud(false)}>
+                                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>Solicitar presupuesto</h3>
+                                        <button className="modal-close" onClick={() => setShowModalSolicitud(false)}>&times;</button>
+                                    </div>
+                                    <form onSubmit={crearSolicitud}>
+                                        <div className="form-group">
+                                            <label className="form-label">Descripción del servicio a solicitar</label>
+                                            <textarea className="form-textarea" rows={2} value={solicitudForm.descripcion} onChange={e => setSolicitudForm({ ...solicitudForm, descripcion: e.target.value })} />
+                                        </div>
+
+                                        {/* SECCIÓN DE IMÁGENES MULTIPLE */}
+                                        <div className="form-group">
+                                            <label className="form-label">Podés agregar imágenes de referencia para el emprendedor (máx. 5)</label>
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                multiple
+                                                accept="image/png,image/jpeg,image/webp"
+                                                className="form-input"
+                                                onChange={handleImageFile}
+                                                style={{ padding: '0.4rem' }}
+                                                disabled={solicitudForm.imagenes?.length >= 5}
+                                            />
+                                            <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '0.3rem' }}>
+                                                {solicitudForm.imagenes?.length || 0} de 5 imágenes cargadas
+                                            </small>
+
+                                            {/* Previews en miniatura */}
+                                            {imagePreviews.length > 0 && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '0.5rem', marginTop: '0.8rem' }}>
+                                                    {imagePreviews.map((src, index) => (
+                                                        <div key={index} style={{ position: 'relative', width: '100%', height: '70px' }}>
+                                                            <img
+                                                                src={src}
+                                                                alt={`Preview ${index + 1}`}
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveImage(index)}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    top: '-6px',
+                                                                    right: '-6px',
+                                                                    background: '#dc3545',
+                                                                    color: '#fff',
+                                                                    border: 'none',
+                                                                    borderRadius: '50%',
+                                                                    width: '20px',
+                                                                    height: '20px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '12px',
+                                                                    lineHeight: '1',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center'
+                                                                }}
+                                                                title="Eliminar imagen"
+                                                            >
+                                                                &times;
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                            )}
+                                        </div>
+                                        <button type="submit" className="btn btn-sage btn-block">Enviar solicitud</button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
 
                         {reportar && (
                             <div className="report-box" style={{ marginTop: '1rem' }}>
