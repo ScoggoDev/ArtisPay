@@ -4,34 +4,40 @@ const { authenticateToken, requireRole } = require('../middleware/auth');
 const { query } = require('../db/pool');
 
 router.get('/', async (req, res) => {
-  const { id_emprendimiento } = req.query;
+  const { categoria, precio_min, precio_max, busqueda, destacado } = req.query;
 
   const conditions = ['s.activo = 1'];
   const params = {};
-  if (id_emprendimiento) {
-    conditions.push('s.id_emprendimiento = @id_emprendimiento');
-    params.id_emprendimiento = parseInt(id_emprendimiento, 10);
+
+  if (categoria) {
+    conditions.push('s.id_categoria = @categoria');
+    params.categoria = parseInt(categoria);
+  }
+  if (precio_min) {
+    conditions.push('s.precio >= @precio_min');
+    params.precio_min = parseFloat(precio_min);
+  }
+  if (precio_max) {
+    conditions.push('s.precio <= @precio_max');
+    params.precio_max = parseFloat(precio_max);
+  }
+  if (busqueda) {
+    conditions.push('(LOWER(s.nombre) LIKE @busqueda OR LOWER(s.descripcion) LIKE @busqueda)');
+    params.busqueda = `%${busqueda.toLowerCase()}%`;
+  }
+  if (destacado === 'true') {
+    conditions.push('p.destacado = 1');
   }
 
-  const sql = `
-    SELECT s.*, e.nombre AS emprendimiento_nombre
+  const { recordset: servicios } = await query(`
+    SELECT s.*, e.nombre AS emprendimiento_nombre, c.nombre AS categoria_nombre
     FROM dbo.servicios s
     LEFT JOIN dbo.emprendimientos e ON e.id_emprendimiento = s.id_emprendimiento
+    LEFT JOIN dbo.categorias c ON c.id_categoria = s.id_categoria
     WHERE ${conditions.join(' AND ')}
-  `;
-  const { recordset: servicios } = await query(sql, params);
+  `, params);
 
-  if (!servicios.length) {
-    return res.json([]);
-  }
-
-  const servicioIds = servicios.map(s => s.id_servicio);
-
-  const { recordset: imagenes } = await query(`
-    SELECT * FROM dbo.imagenes_servicio 
-    WHERE id_servicio IN (${servicioIds.join(',')})
-  `);
-
+  const { recordset: imagenes } = await query('SELECT * FROM dbo.imagenes_servicio');
   const enriched = servicios.map(s => ({
     ...s,
     imagenes: imagenes.filter(i => i.id_servicio === s.id_servicio),

@@ -38,4 +38,5 @@ router.put('/me/desactivar', authenticateToken, async (req, res) => {
   res.json({ message: 'Cuenta desactivada exitosamente' });
 });
 
+
 module.exports = router;
