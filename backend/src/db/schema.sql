@@ -89,6 +89,7 @@ CREATE TABLE dbo.solicitudes_presupuesto (
     id_usuario INT NOT NULL REFERENCES dbo.usuarios(id_usuario),
     id_emprendimiento INT NOT NULL REFERENCES dbo.emprendimientos(id_emprendimiento),
     mensaje NVARCHAR(MAX) NULL,
+    telefono_cliente NVARCHAR(50) NULL,
     estado NVARCHAR(20) NOT NULL DEFAULT 'pendiente',
     fecha DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );

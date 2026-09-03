@@ -50,9 +50,10 @@ router.get('/:id', async (req, res) => {
   const id_servicio = parseInt(req.params.id);
 
   const { recordset } = await query(`
-    SELECT s.*, e.nombre AS emprendimiento_nombre
+    SELECT s.*, e.nombre AS emprendimiento_nombre, c.nombre AS categoria_nombre
     FROM dbo.servicios s
     LEFT JOIN dbo.emprendimientos e ON e.id_emprendimiento = s.id_emprendimiento
+    LEFT JOIN dbo.categorias c ON c.id_categoria = s.id_categoria
     WHERE s.id_servicio = @id_servicio AND s.activo = 1
   `, { id_servicio });
 
@@ -64,6 +65,11 @@ router.get('/:id', async (req, res) => {
     { id_emprendimiento: servicio.id_emprendimiento }
   );
 
+  const { recordset: catRecord } = await query(
+    'SELECT * FROM dbo.categorias WHERE id_categoria = @id_categoria',
+    { id_categoria: servicio.id_categoria }
+  );
+
   const { recordset: imagenes } = await query(
     'SELECT * FROM dbo.imagenes_servicio WHERE id_servicio = @id_servicio',
     { id_servicio }
@@ -72,6 +78,7 @@ router.get('/:id', async (req, res) => {
   res.json({
     ...servicio,
     emprendimiento: empRecord[0] || null,
+    categoria: catRecord[0] || null,
     imagenes,
   });
 });

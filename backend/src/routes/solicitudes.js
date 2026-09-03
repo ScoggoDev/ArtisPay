@@ -28,6 +28,7 @@ router.get('/', authenticateToken, requireRole('emprendedor'), async (req, res) 
                 sp.mensaje, 
                 sp.estado, 
                 sp.fecha,
+                sp.telefono_cliente,
                 u.nombre_usuario AS cliente_nombre,
                 u.email AS cliente_email
              FROM dbo.solicitudes_presupuesto sp
@@ -66,13 +67,14 @@ router.post('/', authenticateToken, requireRole('cliente','emprendedor'), async 
         const id_usuario = req.usuario?.id_usuario || req.user?.id_usuario;
 
         const { recordset } = await query(`
-            INSERT INTO dbo.solicitudes_presupuesto (id_emprendimiento, id_usuario, mensaje)
+            INSERT INTO dbo.solicitudes_presupuesto (id_emprendimiento, id_usuario, mensaje, telefono_cliente)
             OUTPUT INSERTED.*
-            VALUES (@id_emprendimiento, @id_usuario, @mensaje)
+            VALUES (@id_emprendimiento, @id_usuario, @mensaje, @telefono_cliente)
         `, {
             id_emprendimiento: emp.id_emprendimiento,
             id_usuario: id_usuario,
             mensaje: mensaje,
+            telefono_cliente: req.body.telefono_cliente || null,
         });
 
         const solicitud = recordset[0];
