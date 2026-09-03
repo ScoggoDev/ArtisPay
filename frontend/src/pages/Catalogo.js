@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
+import ServiceCard from '../components/ServiceCard';
 
 function Catalogo() {
   const [searchParams] = useSearchParams();
@@ -31,7 +32,13 @@ function Catalogo() {
     const queryStr = params.toString();
 
     if (filtros.tipo === 'todos' || filtros.tipo === 'productos') {
-      api.get(`/productos?${queryStr}`).then(r => setProductos(r.data)).catch(() => setProductos([]));
+      api.get(`/productos?${queryStr}`)
+        .then(r => {
+          // Ordena los productos poniendo los destacados (true) primero
+          const ordenados = [...r.data].sort((a, b) => (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0));
+          setProductos(ordenados);
+        })
+        .catch(() => setProductos([]));
     } else {
       setProductos([]);
     }
@@ -84,7 +91,6 @@ function Catalogo() {
           {/* Filtro de Categoría */}
           <select className="form-select" value={filtros.categoria} onChange={e => setFiltros({ ...filtros, categoria: e.target.value })}>
             <option value="">Todas las categorías</option>
-            <option value="">Todas las categorías</option>
             {categorias.map(c => (
               <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
             ))}
@@ -96,7 +102,7 @@ function Catalogo() {
         </div>
 
         {sinResultados ? (
-          <div className="empty">
+          <div className="empty" style={{ minHeight: '43vh' }}>
             <div className="empty-icon">&#128270;</div>
             <p>No se encontraron productos o servicios que coincidan con la búsqueda.</p>
           </div>
@@ -120,7 +126,7 @@ function Catalogo() {
                 {filtros.tipo === 'todos' && <h3>Servicios</h3>}
                 <div className="grid grid-4" style={{ marginTop: '1rem' }}>
                   {servicios.map(s => (
-                    <ProductCard key={s.id_servicio || s.id_producto} producto={s} esServicio={true} />
+                    <ServiceCard key={s.id_servicio} servicio={s} esServicio={true} />
                   ))}
                 </div>
               </div>

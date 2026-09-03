@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ArtisanLogo from '../components/ArtisanLogo';
 import api from '../services/api';
-
-const PLACEHOLDER = 'https://via.placeholder.com/600x400/F5EDE4/D4A27F?text=Sin+imagen';
 
 function resolveUrl(url) {
     if (!url || typeof url !== 'string') return null;
@@ -26,6 +25,7 @@ function ServicioDetalle() {
     const [solicitudForm, setSolicitudForm] = useState({
         emprendimiento: '',
         usuario: '',
+        telefono: '',
         descripcion: '',
         imagenes: []
     });
@@ -55,7 +55,7 @@ function ServicioDetalle() {
         }
     };
 
-    // Obtener array limpio de URLs de imágenes
+    // Obtener array limpio de URLs de imágenes (Servicio > Perfil de Emprendimiento)
     const getImageUrls = (prod) => {
         if (!prod) return [];
 
@@ -74,10 +74,19 @@ function ServicioDetalle() {
             list = [prod.imagen];
         }
 
-        const resolvedList = list
+        let resolvedList = list
             .map(item => (typeof item === 'string' ? item : item?.url))
             .map(url => resolveUrl(url))
             .filter(Boolean);
+
+        // Si el servicio no tiene imágenes, verificar si el emprendimiento tiene imagen de perfil
+        if (resolvedList.length === 0 && prod.emprendimiento) {
+            const perfilUrl = prod.emprendimiento.imagen_perfil || prod.emprendimiento.logo || prod.emprendimiento.imagen;
+            const resolvedPerfil = resolveUrl(perfilUrl);
+            if (resolvedPerfil) {
+                resolvedList = [resolvedPerfil];
+            }
+        }
 
         return resolvedList;
     };
@@ -107,7 +116,7 @@ function ServicioDetalle() {
     const handleMouseEnter = () => setIsZoomed(true);
     const handleMouseLeave = () => setIsZoomed(false);
 
-    const currentImage = totalImagenes > 0 ? imagenes[currentIndex] : PLACEHOLDER;
+    const currentImage = totalImagenes > 0 && imagenes[currentIndex];
 
     // modal solicitar presupuesto // 
     const handleSolicitarPresupuesto = () => {
@@ -155,12 +164,12 @@ function ServicioDetalle() {
         setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
-
     // envío de solicitud presupuesto // 
     const crearSolicitud = async (e) => {
         e.preventDefault();
         if (!solicitudForm.descripcion.trim()) {
             setMensaje('Solicitud debe contener una descripción');
+            return;
         }
         try {
             await solicitarPresupuesto(emp.id_emprendimiento, usuario.id_usuario, solicitudForm.descripcion);
@@ -172,8 +181,7 @@ function ServicioDetalle() {
             setMsgType('error');
             console.log(error);
         }
-    }
-
+    };
 
     const handleReportar = () => {
         setReportar(prev => {
@@ -231,124 +239,130 @@ function ServicioDetalle() {
                 )}
 
                 <div className="detail-grid">
-                    {/* SECCIÓN IMÁGENES / CARRUSEL CON ZOOM */}
+                    {/* SECCIÓN IMÁGENES / CARRUSEL CON ZOOM / LOGO */}
                     <div>
-                        <div
-                            onMouseEnter={handleMouseEnter}
-                            onMouseLeave={handleMouseLeave}
-                            onMouseMove={handleMouseMove}
-                            style={{
-                                position: 'relative',
-                                width: '100%',
-                                overflow: 'hidden',
-                                borderRadius: 'var(--radius, 8px)',
-                                cursor: 'zoom-in'
-                            }}
-                        >
-                            <img
-                                src={currentImage}
-                                alt={servicio.nombre}
-                                className="detail-img"
+                        {!currentImage ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', padding: '2rem 0' }}>
+                                <ArtisanLogo nombre={emp?.nombre} id_categoria={emp?.id_categoria} size={80} />
+                            </div>
+                        ) : (
+                            <div
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                                onMouseMove={handleMouseMove}
                                 style={{
+                                    position: 'relative',
                                     width: '100%',
-                                    display: 'block',
-                                    transition: isZoomed ? 'transform 0.1s ease-out' : 'transform 0.3s ease',
-                                    transform: isZoomed ? 'scale(1.8)' : 'scale(1)',
-                                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
+                                    overflow: 'hidden',
+                                    borderRadius: 'var(--radius, 8px)',
+                                    cursor: 'zoom-in'
                                 }}
-                            />
+                            >
+                                <img
+                                    src={currentImage}
+                                    alt={servicio.nombre}
+                                    className="detail-img"
+                                    style={{
+                                        width: '100%',
+                                        display: 'block',
+                                        transition: isZoomed ? 'transform 0.1s ease-out' : 'transform 0.3s ease',
+                                        transform: isZoomed ? 'scale(1.8)' : 'scale(1)',
+                                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
+                                    }}
+                                />
 
-                            {/* Botones de navegación (se ocultan opcionalmente al hacer zoom para no estorbar) */}
-                            {totalImagenes > 1 && (
-                                <>
-                                    <button
-                                        onClick={handlePrev}
-                                        style={{
-                                            position: 'absolute',
-                                            top: '50%',
-                                            left: '12px',
-                                            transform: 'translateY(-50%)',
-                                            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: '50%',
-                                            width: '36px',
-                                            height: '36px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '18px',
-                                            zIndex: 3,
-                                            userSelect: 'none',
-                                            opacity: isZoomed ? 0.2 : 1,
-                                            transition: 'opacity 0.2s'
-                                        }}
-                                        title="Anterior"
-                                    >
-                                        &#10094;
-                                    </button>
+                                {/* Botones de navegación */}
+                                {totalImagenes > 1 && (
+                                    <>
+                                        <button
+                                            onClick={handlePrev}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '12px',
+                                                transform: 'translateY(-50%)',
+                                                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '50%',
+                                                width: '36px',
+                                                height: '36px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '18px',
+                                                zIndex: 3,
+                                                userSelect: 'none',
+                                                opacity: isZoomed ? 0.2 : 1,
+                                                transition: 'opacity 0.2s'
+                                            }}
+                                            title="Anterior"
+                                        >
+                                            &#10094;
+                                        </button>
 
-                                    <button
-                                        onClick={handleNext}
-                                        style={{
-                                            position: 'absolute',
-                                            top: '50%',
-                                            right: '12px',
-                                            transform: 'translateY(-50%)',
-                                            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: '50%',
-                                            width: '36px',
-                                            height: '36px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '18px',
-                                            zIndex: 3,
-                                            userSelect: 'none',
-                                            opacity: isZoomed ? 0.2 : 1,
-                                            transition: 'opacity 0.2s'
-                                        }}
-                                        title="Siguiente"
-                                    >
-                                        &#10095;
-                                    </button>
+                                        <button
+                                            onClick={handleNext}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                right: '12px',
+                                                transform: 'translateY(-50%)',
+                                                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '50%',
+                                                width: '36px',
+                                                height: '36px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '18px',
+                                                zIndex: 3,
+                                                userSelect: 'none',
+                                                opacity: isZoomed ? 0.2 : 1,
+                                                transition: 'opacity 0.2s'
+                                            }}
+                                            title="Siguiente"
+                                        >
+                                            &#10095;
+                                        </button>
 
-                                    {/* Indicador de posición / Puntos */}
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            bottom: '12px',
-                                            left: '50%',
-                                            transform: 'translateX(-50%)',
-                                            display: 'flex',
-                                            gap: '6px',
-                                            zIndex: 3,
-                                            opacity: isZoomed ? 0.2 : 1,
-                                            transition: 'opacity 0.2s'
-                                        }}
-                                    >
-                                        {imagenes.map((_, idx) => (
-                                            <span
-                                                key={idx}
-                                                onClick={() => setCurrentIndex(idx)}
-                                                style={{
-                                                    width: '8px',
-                                                    height: '8px',
-                                                    borderRadius: '50%',
-                                                    backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                                                    cursor: 'pointer',
-                                                    transition: 'background-color 0.2s'
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                                        {/* Indicador de posición / Puntos */}
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '12px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                display: 'flex',
+                                                gap: '6px',
+                                                zIndex: 3,
+                                                opacity: isZoomed ? 0.2 : 1,
+                                                transition: 'opacity 0.2s'
+                                            }}
+                                        >
+                                            {imagenes.map((_, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    onClick={() => setCurrentIndex(idx)}
+                                                    style={{
+                                                        width: '8px',
+                                                        height: '8px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                                                        cursor: 'pointer',
+                                                        transition: 'background-color 0.2s'
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
 
                         {/* Miniaturas (Thumbnails) */}
                         {totalImagenes > 1 && (
@@ -387,23 +401,25 @@ function ServicioDetalle() {
                                 Servicio
                             </span>
                         </div>
-                        {servicio.categoria_nombre && <div style={{ marginBottom: '0.5rem' }}>
-                            <span className="badge badge-terracotta">{servicio.categoria_nombre}</span>
-                            {servicio.destacado && <span className="badge badge-sunflower" style={{ marginLeft: '0.4rem' }}>Destacado</span>}
-                        </div>}
+                        {servicio.categoria_nombre && (
+                            <div style={{ marginBottom: '0.5rem' }}>
+                                <span className="badge badge-terracotta">{servicio.categoria_nombre}</span>
+                                {servicio.destacado && <span className="badge badge-sunflower" style={{ marginLeft: '0.4rem' }}>Destacado</span>}
+                            </div>
+                        )}
 
                         <h2 style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>{servicio.nombre}</h2>
-                        <div className="price" style={{ fontSize: '1.6rem', marginBottom: '1rem' }}>{servicio.precio ? '$' : 'Precio a convenir'}</div>
+                        <div className="price" style={{ fontSize: '1.6rem', marginBottom: '1rem' }}>{servicio.precio ? '$' + servicio.precio : 'Precio a convenir'}</div>
                         <p style={{ lineHeight: 1.7, color: 'var(--text-light)', marginBottom: '1.5rem' }}>{servicio.descripcion}</p>
 
                         {usuario && (
-                            <div style={{display: 'flex', gap: '1rem'}}>
-                            <button className="btn btn-secondary" onClick={agregarFavorito} style={{ marginBottom: '1rem' }}>
-                                &#9829; Agregar a favoritos
-                            </button>
-                            <button className="btn btn-primary" onClick={handleSolicitarPresupuesto} style={{ marginBottom: '1rem'}}>
-                                Solicitar presupuesto
-                            </button>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button className="btn btn-secondary" onClick={agregarFavorito} style={{ marginBottom: '1rem' }}>
+                                    &#9829; Agregar a favoritos
+                                </button>
+                                <button className="btn btn-primary" onClick={handleSolicitarPresupuesto} style={{ marginBottom: '1rem' }}>
+                                    Solicitar presupuesto
+                                </button>
                             </div>
                         )}
 
@@ -451,10 +467,12 @@ function ServicioDetalle() {
                                     <form onSubmit={crearSolicitud}>
                                         <div className="form-group">
                                             <label className="form-label">Descripción del servicio a solicitar</label>
-                                            <textarea className="form-textarea" rows={2} value={solicitudForm.descripcion} onChange={e => setSolicitudForm({ ...solicitudForm, descripcion: e.target.value })} />
+                                            <textarea className="form-textarea" rows={2} value={solicitudForm.descripcion} 
+                                            placeholder='Recordá agregar datos necesarios para el presupuesto (medidas, materiales, etc)'
+                                            onChange={e => setSolicitudForm({ ...solicitudForm, descripcion: e.target.value })} />
                                         </div>
 
-                                        {/* SECCIÓN DE IMÁGENES MULTIPLE */}
+                                        {/* SECCIÓN DE IMÁGENES MÚLTIPLE */}
                                         <div className="form-group">
                                             <label className="form-label">Podés agregar imágenes de referencia para el emprendedor (máx. 5)</label>
                                             <input
@@ -508,8 +526,11 @@ function ServicioDetalle() {
                                                         </div>
                                                     ))}
                                                 </div>
-
                                             )}
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Agregá tu número de teléfono (opcional)</label>
+                                            <input type="tel" className="form-input" value={solicitudForm.telefono} onChange={e => setSolicitudForm({ ...solicitudForm, telefono: e.target.value })} />
                                         </div>
                                         <button type="submit" className="btn btn-sage btn-block">Enviar solicitud</button>
                                     </form>
@@ -520,60 +541,28 @@ function ServicioDetalle() {
                         {reportar && (
                             <div className="report-box" style={{ marginTop: '1rem' }}>
                                 <p>¿Estás seguro de que deseas reportar este servicio?</p>
-                                <form onSubmit={e => e.preventDefault()}>
-                                    <div className="form-group">
-                                        <label htmlFor="reportMotive">Seleccione motivo</label>
-                                        <br />
-                                        <select
-                                            className="form-control"
-                                            id="reportMotive"
-                                            value={motivo_reporte}
-                                            onChange={(e) => setMotivoReporte(e.target.value)}
-                                            required
-                                        >
-                                            <option value="" disabled>Seleccione una opción</option>
-                                            <option value="Servicio falso o engañoso">Servicio falso o engañoso</option>
-                                            <option value="Servicio no disponible">Servicio no disponible</option>
-                                            <option value="Servicio con problemas de calidad">Servicio con problemas de calidad</option>
-                                            <option value="Servicio no corresponde a la descripción">Servicio no corresponde a la descripción</option>
-                                            <option value="Otro">Otro</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label htmlFor="reportComents">Ingrese comentarios</label>
-                                        <br />
-                                        <textarea
-                                            className="form-control"
-                                            id="reportComents"
-                                            rows="3"
-                                            value={comentarios_reporte}
-                                            onChange={(e) => setComentariosReporte(e.target.value)}
-                                        />
-                                    </div>
-                                </form>
-                                <button className="btn btn-danger" onClick={reportarServicio} style={{ marginRight: '0.5rem' }}>
-                                    Confirmar
-                                </button>
-                                <button className="btn btn-secondary" onClick={() => setReportar(false)}>
-                                    Cancelar
-                                </button>
+                                <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                                    <label className="form-label">Motivo</label>
+                                    <select className="form-input" value={motivo_reporte} onChange={e => setMotivoReporte(e.target.value)}>
+                                        <option value="">Selecciona un motivo</option>
+                                        <option value="Inapropiado">Contenido inapropiado</option>
+                                        <option value="Engañoso">Información engañosa</option>
+                                        <option value="Spam">Spam / Publicidad no deseada</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Comentarios adicionales</label>
+                                    <textarea className="form-textarea" rows={2} value={comentarios_reporte} onChange={e => setComentariosReporte(e.target.value)} />
+                                </div>
+                                <button className="btn btn-danger" onClick={reportarServicio}>Confirmar reporte</button>
                             </div>
                         )}
 
                         {ocultar && (
-                            <div className="toast" role="alert" aria-live="assertive" aria-atomic="true" style={{ marginTop: '1rem', marginBottom: '1rem' }}>
-                                <div className="toast-body">
-                                    ¿Desea ocultar este servicio? Esta acción no se puede deshacer.
-                                    <p style={{ fontSize: '0.88rem', color: 'var(--text-light)' }}>El servicio no se volverá a mostrar en el catálogo.</p>
-                                    <div style={{ marginTop: '1rem' }}>
-                                        <button className="btn btn-danger" onClick={() => ocultarProd()} style={{ marginRight: '0.5rem' }}>
-                                            Confirmar
-                                        </button>
-                                        <button className="btn btn-secondary" onClick={() => setOcultar(false)}>
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
+                            <div className="report-box" style={{ marginTop: '1rem' }}>
+                                <p>¿Estás seguro de que deseas ocultar este servicio?</p>
+                                <button className="btn btn-danger" onClick={ocultarProd}>Confirmar</button>
                             </div>
                         )}
                     </div>

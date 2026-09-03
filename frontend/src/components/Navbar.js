@@ -45,7 +45,8 @@ function Navbar() {
               <li><Link to="/favoritos" className="nav-link" onClick={close}>Favoritos</Link></li>
             }
             {
-              (usuario.tipo === 'cliente' &&
+              (usuario.tipo === 'cliente' || usuario.tipo === 'emprendedor') &&
+              (
                 <li><Link to="/perfil" className="nav-link" onClick={close}>{usuario.nombre_usuario}</Link></li>)
             }
             <li><button className="btn btn-ghost btn-sm" onClick={handleLogout}>Salir</button></li>

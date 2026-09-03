@@ -9,7 +9,6 @@ function resolveUrl(url) {
 }
 
 function ServiceCard({ servicio }) {
-
   const getImageUrl = (servicio) => {
     if (!servicio) return null;
 
@@ -28,21 +27,61 @@ function ServiceCard({ servicio }) {
   const rawUrl = getImageUrl(servicio);
   const imagen = resolveUrl(rawUrl) || PLACEHOLDER;
 
+  // Estilo reutilizable para truncar texto a máximo 2 líneas con puntos suspensivos
+  const lineClampStyle = {
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  };
 
   return (
-    <div className="card">
-      {imagen ? <img src={imagen} alt={servicio.nombre} className="card-img" /> :
+    <div 
+      className="card" 
+      style={{ 
+        height: '490px', 
+        display: 'flex', 
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}
+    >
+      {imagen ? (
+        <img 
+          src={imagen} 
+          alt={servicio.nombre} 
+          className="card-img" 
+          style={{ 
+            height: '200px', 
+            objectFit: 'cover', 
+            width: '100%',
+            flexShrink: 0 
+          }} 
+        />
+      ) : (
         <div style={{
-          height: 140,
+          height: 200,
           background: 'linear-gradient(135deg, var(--sage-light) 0%, var(--linen) 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '2.5rem',
+          flexShrink: 0
         }}>
-          ✦</div>}
+          ✦
+        </div>
+      )}
 
-      <div className="card-body">
+      <div 
+        className="card-body" 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          flex: 1, 
+          padding: '1rem' 
+        }}
+      >
+        {/* Badge de Servicio fijo arriba */}
         <div style={{ marginBottom: '0.4rem' }}>
           <span style={{
             fontSize: '0.7rem',
@@ -55,26 +94,55 @@ function ServiceCard({ servicio }) {
             Servicio
           </span>
         </div>
-        <div className="card-title">{servicio.nombre}</div>
-        <p className="card-text">
-          {servicio.descripcion?.substring(0, 80)}
-          {servicio.descripcion?.length > 80 ? '...' : ''}
-        </p>
-        <div style={{ marginBottom: '0.5rem' }}>
-          {servicio.precio ? (
-            <span className="price">${parseFloat(servicio.precio).toLocaleString('es-UY')}</span>
-          ) : (
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-light)', fontWeight: 600 }}>Precio a convenir</span>
-          )}
+
+        {/* Nombre truncado a 2 líneas */}
+        <div 
+          className="card-title" 
+          style={{ 
+            ...lineClampStyle, 
+            lineHeight: '1.3', 
+            marginBottom: '0.5rem',
+            minHeight: '2.6em' // Reserva el espacio para mantener la alineación
+          }}
+          title={servicio.nombre}
+        >
+          {servicio.nombre}
         </div>
-        {servicio.emprendimiento_nombre && (
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.8rem' }}>
-            por <strong>{servicio.emprendimiento_nombre}</strong>
-          </p>
-        )}
-        <Link to={`/servicio/${servicio.id_servicio}`} className="btn btn-outline btn-sm btn-block">
-          Ver detalle
-        </Link>
+
+        {/* Descripción truncada a 2 líneas */}
+        <p 
+          className="card-text" 
+          style={{ 
+            ...lineClampStyle, 
+            lineHeight: '1.4', 
+            marginBottom: '0.8rem',
+            color: 'var(--text-light, #666)'
+          }}
+          title={servicio.descripcion}
+        >
+          {servicio.descripcion}
+        </p>
+
+        {/* Bloque inferior: Empujado al fondo con marginTop: 'auto' */}
+        <div style={{ marginTop: 'auto' }}>
+          <div style={{ marginBottom: '0.5rem' }}>
+            {servicio.precio ? (
+              <span className="price">${servicio.precio}</span>
+            ) : (
+              <span className="price">Precio a convenir</span>
+            )}
+          </div>
+
+          {servicio.emprendimiento_nombre && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              por <strong>{servicio.emprendimiento_nombre}</strong>
+            </p>
+          )}
+
+          <Link to={`/servicio/${servicio.id_servicio}`} className="btn btn-outline btn-sm btn-block">
+            Ver detalle
+          </Link>
+        </div>
       </div>
     </div>
   );

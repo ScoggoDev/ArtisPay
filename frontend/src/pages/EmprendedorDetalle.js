@@ -18,10 +18,15 @@ function EmprendedorDetalle() {
   const [motivo_reporte, setMotivoReporte] = useState('');
   const [comentarios_reporte, setComentariosReporte] = useState('');
   const [empActivo, setEmpActivo] = useState(true);
+  const [productosDestacados, setProductosDestacados] = useState([]);
 
   useEffect(() => {
     api.get(`/emprendimientos/${id}`).then(r => setEmp(r.data)).catch(() => { });
   }, [id]);
+
+  useEffect(() => {
+    setProductosDestacados(emp?.productos?.filter(p => p.destacado) || []);
+  }, [emp]);
 
   function resolveUrl(url) {
     if (!url || typeof url !== 'string') return null;
@@ -106,7 +111,6 @@ function EmprendedorDetalle() {
       setMsgType('error');
     }
   };
-
 
   const bloquearPerfil = async () => {
     try {
@@ -214,9 +218,9 @@ function EmprendedorDetalle() {
               <p>¿Estás seguro de que deseas reportar este perfil?</p>
               <form>
                 <div className="form-group">
-                  <label for="reportMotive">Seleccione motivo</label>
+                  <label htmlFor="reportMotive">Seleccione motivo</label>
                   <br />
-                  <select className="form-control" id="reportMotive" style={{ minHeight: '25px', minWidth: '260px'}}
+                  <select className="form-control" id="reportMotive" style={{ minHeight: '25px', minWidth: '260px' }}
                     value={motivo_reporte} onChange={(e) => setMotivoReporte(e.target.value)} required>
                     <option value="" disabled>Seleccione una opción</option>
                     <option value="Perfil falso o engañoso">Perfil falso o engañoso</option>
@@ -226,7 +230,7 @@ function EmprendedorDetalle() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label for="reportComents">Ingrese comentarios</label>
+                  <label htmlFor="reportComents">Ingrese comentarios</label>
                   <br />
                   <textarea className="form-control" id="reportComents" style={{ minWidth: '260px' }} rows="3" value={comentarios_reporte} onChange={(e) => setComentariosReporte(e.target.value)}></textarea>
                 </div>
@@ -258,23 +262,40 @@ function EmprendedorDetalle() {
 
         </div>
         <section className="section" style={{ paddingTop: 0 }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Productos</h3>
-          {emp.productos?.length === 0 ? (
+          {emp?.productos?.length === 0 ? (
             <div className="empty">
+              <h3 style={{ marginBottom: '1.5rem' }}>Productos</h3>
               <p>Este emprendimiento aún no tiene productos publicados.</p>
             </div>
           ) : (
-            <div className="grid grid-3">
-              {emp.productos?.map(p => (
-                <ProductCard key={p.id_producto} producto={{ ...p, emprendimiento_nombre: emp.nombre }} />
-              ))}
+            <div>
+              {
+                productosDestacados.length > 0 && (
+                  <div style={{ marginBottom: '3rem' }}>
+                    <h3 style={{ marginBottom: '1.5rem' }}>Productos destacados</h3>
+                    <div className="grid grid-3">
+                      {productosDestacados.map(p => (
+                        <ProductCard key={p.id_producto} producto={{ ...p, emprendimiento_nombre: emp.nombre }} />
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
+
+              <h3 style={{ marginBottom: '1.5rem' }}>Todos los productos</h3>
+              <div className="grid grid-3">
+                {[...(emp?.productos || [])]
+                  .map(p => (
+                    <ProductCard key={p.id_producto} producto={{ ...p, emprendimiento_nombre: emp.nombre }} />
+                  ))}
+              </div>
             </div>
           )}
         </section>
 
         {emp.servicios?.length > 0 && (
           <section className="section" style={{ paddingTop: 0 }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Servicios</h3>
+            <h3 style={{ marginBottom: '1.5rem' }}>Todos los servicios</h3>
             <div className="grid grid-3">
               {emp.servicios?.map(s => (
                 <ServiceCard key={s.id_servicio} servicio={{ ...s, emprendimiento_nombre: emp.nombre }} />

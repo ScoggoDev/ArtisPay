@@ -27,30 +27,93 @@ function ProductCard({ producto }) {
   const rawUrl = getImageUrl(producto);
   const imagen = resolveUrl(rawUrl) || PLACEHOLDER;
 
+  // Estilo reutilizable para truncar texto a máximo 2 líneas con puntos suspensivos
+  const lineClampStyle = {
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  };
 
   return (
-    <div className="card">
-      <img src={imagen} alt={producto.nombre} className="card-img" />
-      <div className="card-body">
-        <div className="card-title">{producto.nombre}</div>
-        <p className="card-text">
-          {producto.descripcion?.substring(0, 80)}
-          {producto.descripcion?.length > 80 ? '...' : ''}
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <span className="price">{producto.precio? `$${producto.precio}` : 'Consultar precio'}</span>
-          {producto.categoria_nombre && (
-            <span className="badge badge-terracotta">{producto.categoria_nombre}</span>
-          )}
+    <div 
+      className="card" 
+      style={{ 
+        height: '490px', 
+        display: 'flex', 
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}
+    >
+      <img 
+        src={imagen} 
+        alt={producto.nombre} 
+        className="card-img" 
+        style={{ 
+          height: '200px', 
+          objectFit: 'cover', 
+          width: '100%',
+          flexShrink: 0 
+        }} 
+      />
+
+      <div 
+        className="card-body" 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          flex: 1, 
+          padding: '1rem' 
+        }}
+      >
+        {/* Nombre truncado a 2 líneas */}
+        <div 
+          className="card-title" 
+          style={{ 
+            ...lineClampStyle, 
+            lineHeight: '1.3', 
+            marginBottom: '0.5rem',
+            minHeight: '2.6em' // Reserva el espacio para mantener alineación
+          }}
+          title={producto.nombre}
+        >
+          {producto.nombre}
         </div>
-        {producto.emprendimiento_nombre && (
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.8rem' }}>
-            por <strong>{producto.emprendimiento_nombre}</strong>
-          </p>
-        )}
-        <Link to={`/producto/${producto.id_producto}`} className="btn btn-outline btn-sm btn-block">
-          Ver detalle
-        </Link>
+
+        {/* Descripción truncada a 2 líneas */}
+        <p 
+          className="card-text" 
+          style={{ 
+            ...lineClampStyle, 
+            lineHeight: '1.4', 
+            marginBottom: '0.8rem',
+            color: 'var(--text-light, #666)'
+          }}
+          title={producto.descripcion}
+        >
+          {producto.descripcion}
+        </p>
+
+        {/* Bloque inferior: Empujado hacia el final con marginTop: 'auto' */}
+        <div style={{ marginTop: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span className="price">{producto.precio ? `$${producto.precio}` : 'Consultar precio'}</span>
+            {producto.categoria_nombre && (
+              <span className="badge badge-terracotta">{producto.categoria_nombre}</span>
+            )}
+          </div>
+
+          {producto.emprendimiento_nombre && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              por <strong>{producto.emprendimiento_nombre}</strong>
+            </p>
+          )}
+
+          <Link to={`/producto/${producto.id_producto}`} className="btn btn-outline btn-sm btn-block">
+            Ver detalle
+          </Link>
+        </div>
       </div>
     </div>
   );

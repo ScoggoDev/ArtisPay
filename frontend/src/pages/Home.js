@@ -115,7 +115,7 @@ function Home() {
                 <Link to="/catalogo">Ver catálogo &rarr;</Link>
               </div>
               {items.length === 0 ? (
-                <div className="empty">
+                <div className="empty" style={{ minHeight: '34vh' }}>
                   <div className="empty-icon">&#127912;</div>
                   <p>Aún no hay publicaciones. ¡Sé el primero en publicar!</p>
                   <Link to="/registro" className="btn btn-primary" style={{ marginTop: '1rem' }}>

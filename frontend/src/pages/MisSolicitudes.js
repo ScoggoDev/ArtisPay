@@ -82,13 +82,14 @@ const MisSolicitudes = () => {
                         <p>No has recibido solicitudes de presupuesto aún. Cuando recibas una solicitud, se mostrará acá.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto" style={{ minHeight: '42vh' }}>
+                    <div className="overflow-x-auto" style={{ minHeight: '59vh', marginTop: '1.5rem' }}>
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-gray-100 border-b border-gray-200 text-gray-600 text-sm">
                                     <th className="p-3">Cliente</th>
                                     <th className="p-3">Fecha</th>
                                     <th className="p-3">Mensaje</th>
+                                    <th className="p-3">Teléfono</th>
                                     <th className="p-3 text-center">Estado</th>
                                     <th className="p-3 text-center">Acciones</th>
                                 </tr>
@@ -108,15 +109,16 @@ const MisSolicitudes = () => {
                                         <td className="p-3 max-w-xs truncate" title={s.mensaje}>
                                             {s.mensaje}
                                         </td>
+                                        <td className="p-3 whitespace-nowrap">
+                                            {s.telefono || 'No proporcionado'}
+                                        </td>
                                         <td className="p-3 text-center whitespace-nowrap">
                                             {getBadgeEstado(s.estado)}
                                         </td>
                                         <td className="p-3 text-center whitespace-nowrap space-x-2">
                                             <button
                                                 onClick={() => setSolicitudSeleccionada(s)}
-                                                className="btn badge-sunflower btn-sm"
-
-                                            >
+                                                className="btn badge-sunflower btn-sm">
                                                 Detalle
                                             </button>
 
@@ -165,6 +167,9 @@ const MisSolicitudes = () => {
                                 </div>
                                 <div>
                                     <strong>Email del cliente:</strong> {solicitudSeleccionada.cliente_email}
+                                </div>
+                                <div>
+                                    <strong>Teléfono:</strong> {solicitudSeleccionada.telefono || 'No proporcionado'}
                                 </div>
                                 <div>
                                     <strong>Mensaje:</strong> {solicitudSeleccionada.mensaje}

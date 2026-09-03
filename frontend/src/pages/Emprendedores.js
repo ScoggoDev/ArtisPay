@@ -46,7 +46,7 @@ function Emprendedores() {
         )}
         <h2 style={{ marginBottom: '1.5rem' }}>Emprendedores de Paysandú</h2>
         {emprendimientos.length === 0 ? (
-          <div className="empty">
+          <div className="empty" style={{ minHeight: '59vh' }}>
             <div className="empty-icon">&#127912;</div>
             <p>Aún no hay emprendedores registrados.</p>
           </div>
