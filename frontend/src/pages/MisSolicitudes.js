@@ -7,6 +7,9 @@ const MisSolicitudes = () => {
     const [error, setError] = useState(null);
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
 
+    const [mensaje, setMensaje] = useState('');
+    const [msgType, setMsgType] = useState('info');
+
     useEffect(() => {
         fetchSolicitudes();
     }, []);
@@ -24,33 +27,24 @@ const MisSolicitudes = () => {
     };
 
     // Función para actualizar el estado (Aceptar / Rechazar)
-    const handleCambiarEstado = async (id, nuevoEstado) => {
+    const handleCambiarEstado = async (id_solicitud, nuevoEstado) => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/solicitudes/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ estado: nuevoEstado })
+            const { data } = await api.patch(`/solicitudes/${id_solicitud}/estado`, {
+                estado: nuevoEstado
             });
 
-            if (!res.ok) throw new Error('No se pudo actualizar el estado');
-
-            // Actualización reactiva del estado local
-            setSolicitudes(prev =>
-                prev.map(item =>
-                    item.id_solicitud === id ? { ...item, estado: nuevoEstado } : item
+            setSolicitudes((prevSolicitudes) =>
+                prevSolicitudes.map((sol) =>
+                    sol.id_solicitud === id_solicitud ? { ...sol, estado: nuevoEstado } : sol
                 )
             );
 
-            // Si el modal está abierto, actualizamos su vista también
-            if (solicitudSeleccionada && solicitudSeleccionada.id_solicitud === id) {
-                setSolicitudSeleccionada(prev => ({ ...prev, estado: nuevoEstado }));
-            }
-        } catch (err) {
-            alert(err.message);
+            setMensaje(data.message || `Solicitud ${nuevoEstado} correctamente `);
+            setMsgType('success');
+        } catch (error) {
+            console.error('Error al cambiar el estado:', error);
+            setMensaje(error.response?.data?.error || 'Error al actualizar la solicitud', 'error');
+            setMsgType('error');
         }
     };
 
@@ -74,6 +68,12 @@ const MisSolicitudes = () => {
     return (
         <div className="container page-enter">
             <div className='section'>
+                {mensaje && (
+                    <div className={`alert alert-${msgType} flash`}>
+                        {mensaje}
+                        <button className="alert-close" style={{marginLeft:'5px'}} onClick={() => setMensaje('')}>&times;</button>
+                    </div>
+                )}
                 <h2 className="text-2xl font-bold mb-6 text-gray-800" style={{ marginBottom: '1rem' }}>Solicitudes de Presupuesto</h2>
 
                 {solicitudes.length === 0 ? (
@@ -87,10 +87,10 @@ const MisSolicitudes = () => {
                             <thead>
                                 <tr className="bg-gray-100 border-b border-gray-200 text-gray-600 text-sm">
                                     <th className="p-3">Cliente</th>
-                                    <th className="p-3">Fecha</th>
+                                    <th className="col-ocultar-mobile md:table-cell p-3">Fecha</th>
                                     <th className="p-3">Mensaje</th>
-                                    <th className="p-3">Teléfono</th>
-                                    <th className="p-3 text-center">Estado</th>
+                                    <th className="col-ocultar-mobile md:table-cell p-3">Teléfono</th>
+                                    <th className="col-ocultar-mobile p-3 text-center">Estado</th>
                                     <th className="p-3 text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -101,43 +101,47 @@ const MisSolicitudes = () => {
                                             <div>{s.cliente_nombre || 'Cliente sin nombre'}</div>
                                             <div className="text-xs text-gray-400">{s.cliente_email}</div>
                                         </td>
-                                        <td className="p-3 whitespace-nowrap">
+                                        <td className="col-ocultar-mobile md:table-cell p-3 whitespace-nowrap">
                                             {new Date(s.fecha).toLocaleDateString('es-ES', {
                                                 day: '2-digit', month: '2-digit', year: 'numeric'
                                             })}
                                         </td>
                                         <td className="p-3 max-w-xs truncate" title={s.mensaje}>
-                                            {s.mensaje}
+                                            {s.mensaje && s.mensaje.length > 40
+                                                ? `${s.mensaje.substring(0, 40)}...`
+                                                : s.mensaje}
                                         </td>
-                                        <td className="p-3 whitespace-nowrap">
-                                            {s.telefono || 'No proporcionado'}
+                                        <td className="col-ocultar-mobile md:table-cell p-3 whitespace-nowrap">
+                                            {s.telefono_cliente || 'No proporcionado'}
                                         </td>
-                                        <td className="p-3 text-center whitespace-nowrap">
+                                        <td className="col-ocultar-mobile p-3 text-center whitespace-nowrap">
                                             {getBadgeEstado(s.estado)}
                                         </td>
                                         <td className="p-3 text-center whitespace-nowrap space-x-2">
-                                            <button
-                                                onClick={() => setSolicitudSeleccionada(s)}
-                                                className="btn badge-sunflower btn-sm">
-                                                Detalle
-                                            </button>
+                                            <div className='mx-auto' style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                                <button
+                                                    onClick={() => setSolicitudSeleccionada(s)}
+                                                    className="btn badge-sunflower btn-sm">
+                                                    Detalle
+                                                </button>
 
-                                            {s.estado === 'pendiente' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleCambiarEstado(s.id_solicitud, 'aceptada')}
-                                                        className="btn btn-sage btn-sm"
-                                                    >
-                                                        Aceptar
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleCambiarEstado(s.id_solicitud, 'rechazada')}
-                                                        className="btn btn-primary btn-sm"
-                                                    >
-                                                        Rechazar
-                                                    </button>
-                                                </>
-                                            )}
+                                                {s.estado === 'pendiente' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleCambiarEstado(s.id_solicitud, 'aceptada')}
+                                                            className="btn btn-sage btn-sm col-ocultar-mobile"
+                                                        >
+                                                            Aceptar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCambiarEstado(s.id_solicitud, 'rechazada')}
+                                                            className="btn btn-primary btn-sm col-ocultar-mobile"
+                                                        >
+                                                            Rechazar
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -169,7 +173,7 @@ const MisSolicitudes = () => {
                                     <strong>Email del cliente:</strong> {solicitudSeleccionada.cliente_email}
                                 </div>
                                 <div>
-                                    <strong>Teléfono:</strong> {solicitudSeleccionada.telefono || 'No proporcionado'}
+                                    <strong>Teléfono:</strong> {solicitudSeleccionada.telefono_cliente || 'No proporcionado'}
                                 </div>
                                 <div>
                                     <strong>Mensaje:</strong> {solicitudSeleccionada.mensaje}

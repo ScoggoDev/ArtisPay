@@ -30,8 +30,8 @@
 *::after {
   box-sizing: border-box;
   margin-top: 1px;
-  margin-left: 1px;
-  margin-right: 1px;
+  margin-left: 0;
+  margin-right: 0;
   margin-bottom: 0;
   padding: 0;
 }
@@ -47,7 +47,8 @@ body {
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
   min-height: 100vh;
-
+  margin-left: 0;
+  margin-right: 0;
 }
 
 h1,
@@ -161,7 +162,7 @@ a:hover {
 
   .nav-links {
     position: fixed;
-    top: var(--nav-height);
+    top: 55px;
     left: 0;
     right: 0;
     background: var(--warm-white);
@@ -420,7 +421,11 @@ a:hover {
   line-height: 1.5;
 }
 
-.hero-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.hero-actions {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
 
 .hero-decoration {
   position: absolute;
@@ -659,10 +664,14 @@ a:hover {
   align-items: start;
 }
 
-.home-split.home-split-full { grid-template-columns: 1fr; }
+.home-split.home-split-full {
+  grid-template-columns: 1fr;
+}
 
 @media (max-width: 900px) {
-  .home-split { grid-template-columns: 1fr; }
+  .home-split {
+    grid-template-columns: 1fr;
+  }
 }
 
 .home-split-side .featured-card {
@@ -819,6 +828,12 @@ tr:last-child td {
 
 tr:hover td {
   background: rgba(232, 115, 74, 0.03);
+}
+
+@media (max-width: 750px) {
+  .col-ocultar-mobile {
+    display: none !important;
+  }
 }
 
 /* ===================== STAT CARDS ===================== */

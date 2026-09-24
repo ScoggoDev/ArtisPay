@@ -43,7 +43,7 @@ function MiEmprendimiento() {
   });
   const [imagePreviews, setImagePreviews] = useState([]);
 
-  const [servicioForm, setServicioForm] = useState({ nombre: '', descripcion: '', precio: '' });
+  const [servicioForm, setServicioForm] = useState({ nombre: '', descripcion: '', precio: '', id_categoria: '' });
 
   // Referencias de inputs
   const productFileInputRef = useRef(null);
@@ -62,7 +62,7 @@ function MiEmprendimiento() {
 
   const flash = (msg, type = 'success') => { setMensaje(msg); setMsgType(type); };
 
-  // --- MANEJO DE DESTACADOS ---
+  // manejo de destacados
   const toggleDestacado = async (producto) => {
     const esDestacadoActualmente = Boolean(producto.destacado);
     const destacadosActuales = productos.filter(p => p.destacado);
@@ -76,11 +76,7 @@ function MiEmprendimiento() {
     const nuevoEstado = !esDestacadoActualmente;
 
     try {
-      // Llamada a la API para persistir el cambio
-      await api.put(`/productos/${producto.id_producto}`, {
-        ...producto,
-        destacado: nuevoEstado
-      });
+      await api.patch(`/productos/${producto.id_producto}/destacado`, { destacado: nuevoEstado });
 
       // Actualizar estado local
       setProductos(prev =>
@@ -97,7 +93,7 @@ function MiEmprendimiento() {
     }
   };
 
-  // --- MANEJO DE MÚLTIPLES IMÁGENES DE PRODUCTOS (HASTA 5) ---
+  // manejo de imágenes múltiples para productos (hasta 5)
   const handleImageFile = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -136,7 +132,7 @@ function MiEmprendimiento() {
     setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // --- MANEJO DE MÚLTIPLES IMÁGENES DE SERVICIOS (HASTA 5) ---
+  // manejo de imágenes múltiples para servicios (hasta 5)
   const handleServiceImageFile = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -290,7 +286,7 @@ function MiEmprendimiento() {
         {mensaje && (
           <div className={`alert alert-${msgType} flash`}>
             {mensaje}
-            <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
+            <button className="alert-close" style={{marginLeft:'5px'}} onClick={() => setMensaje('')}>&times;</button>
           </div>
         )}
 
@@ -410,11 +406,21 @@ function MiEmprendimiento() {
                   <label className="form-label">Descripción</label>
                   <textarea className="form-textarea" rows={2} value={servicioForm.descripcion} onChange={e => setServicioForm({ ...servicioForm, descripcion: e.target.value })} />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Precio (dejar vacío si es a convenir)</label>
-                  <input className="form-input" type="number" step="0.01" value={servicioForm.precio} onChange={e => setServicioForm({ ...servicioForm, precio: e.target.value })} placeholder="Ej: 500" />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Precio (opcional)</label>
+                    <input className="form-input" type="number" step="0.01" value={servicioForm.precio} onChange={e => setServicioForm({ ...servicioForm, precio: e.target.value })} placeholder="Ej: 500" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Categoría</label>
+                    <select className="form-select" value={servicioForm.id_categoria} onChange={e => setServicioForm({ ...servicioForm, id_categoria: e.target.value })} required>
+                      <option value="">Seleccionar</option>
+                      {categorias.map(c => (
+                        <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-
                 {/* SECCIÓN DE IMÁGENES MULTIPLE */}
                 <div className="form-group">
                   <label className="form-label">Imágenes del servicio (máx. 5)</label>
@@ -470,7 +476,14 @@ function MiEmprendimiento() {
                     </div>
                   )}
                 </div>
-                <button type="submit" className="btn btn-sage btn-block">Publicar servicio</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', gap: '1rem' }}>
+                  <button type="button" className="btn btn-outline btn-block" onClick={() => (
+                    setServicioForm({ nombre: '', descripcion: '', precio: '', id_categoria: '', imagenes: [] }),
+                    setImagePreviews([]),
+                    setShowServicioModal(false)
+                  )}>Cancelar</button>
+                  <button type="submit" className="btn btn-sage btn-block">Publicar servicio</button>
+                </div>
               </form>
             </div>
           </div>

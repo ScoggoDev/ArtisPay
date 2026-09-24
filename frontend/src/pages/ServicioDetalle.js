@@ -25,13 +25,10 @@ function ServicioDetalle() {
     const [solicitudForm, setSolicitudForm] = useState({
         emprendimiento: '',
         usuario: '',
-        telefono: '',
+        telefono_cliente: '',
         descripcion: '',
-        imagenes: []
     });
-    const [imagePreviews, setImagePreviews] = useState([]);
-    const fileInputRef = useRef(null);
-
+    
     // Estados para el efecto Zoom
     const [isZoomed, setIsZoomed] = useState(false);
     const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
@@ -120,48 +117,8 @@ function ServicioDetalle() {
 
     // modal solicitar presupuesto // 
     const handleSolicitarPresupuesto = () => {
-        setSolicitudForm({ descripcion: '', imagenes: [] });
-        setImagePreviews([]);
+        setSolicitudForm({ descripcion: '', telefono_cliente: '' });
         setShowModalSolicitud(true);
-    };
-
-    //  manejo de imágenes para solicitudes presupuesto //
-    const handleImageFile = (e) => {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
-
-        const currentImages = solicitudForm.imagenes || [];
-        if (currentImages.length + files.length > 5) {
-            setMensaje('Solo podés agregar hasta 5 imágenes por solicitud.', 'error');
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            return;
-        }
-
-        files.forEach((file) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const base64 = ev.target.result;
-                const key = `ls:artispay_img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                localStorage.setItem(key, base64);
-
-                setSolicitudForm(prev => ({
-                    ...prev,
-                    imagenes: [...prev.imagenes, key]
-                }));
-                setImagePreviews(prev => [...prev, base64]);
-            };
-            reader.readAsDataURL(file);
-        });
-
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const handleRemoveImage = (indexToRemove) => {
-        setSolicitudForm(prev => ({
-            ...prev,
-            imagenes: prev.imagenes.filter((_, idx) => idx !== indexToRemove)
-        }));
-        setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
     // envío de solicitud presupuesto // 
@@ -172,7 +129,7 @@ function ServicioDetalle() {
             return;
         }
         try {
-            await solicitarPresupuesto(emp.id_emprendimiento, usuario.id_usuario, solicitudForm.descripcion);
+            await solicitarPresupuesto(emp.id_emprendimiento, usuario.id_usuario, solicitudForm.descripcion, solicitudForm.telefono_cliente);
             setMensaje('Solicitud creada con éxito');
             setMsgType('success');
             setShowModalSolicitud(false);
@@ -276,6 +233,16 @@ function ServicioDetalle() {
                                     <>
                                         <button
                                             onClick={handlePrev}
+                                            onMouseEnter={(e) => {
+                                                e.stopPropagation();
+                                                handleMouseLeave();
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.stopPropagation();
+                                                handleMouseEnter(e);
+                                                handleMouseMove(e);
+                                            }}
+                                            onMouseMove={(e) => e.stopPropagation()}
                                             style={{
                                                 position: 'absolute',
                                                 top: '50%',
@@ -304,6 +271,16 @@ function ServicioDetalle() {
 
                                         <button
                                             onClick={handleNext}
+                                            onMouseEnter={(e) => {
+                                                e.stopPropagation();
+                                                handleMouseLeave();
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.stopPropagation();
+                                                handleMouseEnter(e);
+                                                handleMouseMove(e);
+                                            }}
+                                            onMouseMove={(e) => e.stopPropagation()}
                                             style={{
                                                 position: 'absolute',
                                                 top: '50%',
@@ -332,6 +309,16 @@ function ServicioDetalle() {
 
                                         {/* Indicador de posición / Puntos */}
                                         <div
+                                            onMouseEnter={(e) => {
+                                                e.stopPropagation();
+                                                handleMouseLeave();
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.stopPropagation();
+                                                handleMouseEnter(e);
+                                                handleMouseMove(e);
+                                            }}
+                                            onMouseMove={(e) => e.stopPropagation()}
                                             style={{
                                                 position: 'absolute',
                                                 bottom: '12px',
@@ -467,72 +454,15 @@ function ServicioDetalle() {
                                     <form onSubmit={crearSolicitud}>
                                         <div className="form-group">
                                             <label className="form-label">Descripción del servicio a solicitar</label>
-                                            <textarea className="form-textarea" rows={2} value={solicitudForm.descripcion} 
-                                            placeholder='Recordá agregar datos necesarios para el presupuesto (medidas, materiales, etc)'
-                                            onChange={e => setSolicitudForm({ ...solicitudForm, descripcion: e.target.value })} />
-                                        </div>
-
-                                        {/* SECCIÓN DE IMÁGENES MÚLTIPLE */}
-                                        <div className="form-group">
-                                            <label className="form-label">Podés agregar imágenes de referencia para el emprendedor (máx. 5)</label>
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                multiple
-                                                accept="image/png,image/jpeg,image/webp"
-                                                className="form-input"
-                                                onChange={handleImageFile}
-                                                style={{ padding: '0.4rem' }}
-                                                disabled={solicitudForm.imagenes?.length >= 5}
-                                            />
-                                            <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '0.3rem' }}>
-                                                {solicitudForm.imagenes?.length || 0} de 5 imágenes cargadas
-                                            </small>
-
-                                            {/* Previews en miniatura */}
-                                            {imagePreviews.length > 0 && (
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '0.5rem', marginTop: '0.8rem' }}>
-                                                    {imagePreviews.map((src, index) => (
-                                                        <div key={index} style={{ position: 'relative', width: '100%', height: '70px' }}>
-                                                            <img
-                                                                src={src}
-                                                                alt={`Preview ${index + 1}`}
-                                                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleRemoveImage(index)}
-                                                                style={{
-                                                                    position: 'absolute',
-                                                                    top: '-6px',
-                                                                    right: '-6px',
-                                                                    background: '#dc3545',
-                                                                    color: '#fff',
-                                                                    border: 'none',
-                                                                    borderRadius: '50%',
-                                                                    width: '20px',
-                                                                    height: '20px',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '12px',
-                                                                    lineHeight: '1',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center'
-                                                                }}
-                                                                title="Eliminar imagen"
-                                                            >
-                                                                &times;
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            <textarea className="form-textarea" rows={2} value={solicitudForm.descripcion}
+                                                placeholder='Recordá agregar datos necesarios para el presupuesto (medidas, materiales, etc)'
+                                                onChange={e => setSolicitudForm({ ...solicitudForm, descripcion: e.target.value })} />
                                         </div>
                                         <div>
-                                            <label className="form-label">Agregá tu número de teléfono (opcional)</label>
-                                            <input type="tel" className="form-input" value={solicitudForm.telefono} onChange={e => setSolicitudForm({ ...solicitudForm, telefono: e.target.value })} />
+                                            <label className="form-label">Agregá tu número de teléfono o medio de contacto (opcional)</label>
+                                            <input type="text" className="form-input" value={solicitudForm.telefono_cliente} onChange={e => setSolicitudForm({ ...solicitudForm, telefono_cliente: e.target.value })} />
                                         </div>
-                                        <button type="submit" className="btn btn-sage btn-block">Enviar solicitud</button>
+                                        <button type="submit" className="btn btn-sage btn-block" style={{marginTop:'1rem'}}>Enviar solicitud</button>
                                     </form>
                                 </div>
                             </div>

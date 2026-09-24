@@ -146,7 +146,7 @@ function ProductoDetalle() {
 
   return (
     <div className="page-enter container">
-      <div className="section" style={{minHeight: '78vh' }}>
+      <div className="section" style={{ minHeight: '78vh' }}>
         {mensaje && (
           <div className={`alert alert-${msgType} flash`}>
             {mensaje}
@@ -187,6 +187,16 @@ function ProductoDetalle() {
                 <>
                   <button
                     onClick={handlePrev}
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      handleMouseLeave();
+                    }}
+                    onMouseLeave={(e) => {
+                      e.stopPropagation();
+                      handleMouseEnter(e);  
+                      handleMouseMove(e);   
+                    }}
+                    onMouseMove={(e) => e.stopPropagation()}
                     style={{
                       position: 'absolute',
                       top: '50%',
@@ -215,6 +225,16 @@ function ProductoDetalle() {
 
                   <button
                     onClick={handleNext}
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      handleMouseLeave();
+                    }}
+                    onMouseLeave={(e) => {
+                      e.stopPropagation();
+                      handleMouseEnter(e);  
+                      handleMouseMove(e);   
+                    }}
+                    onMouseMove={(e) => e.stopPropagation()}
                     style={{
                       position: 'absolute',
                       top: '50%',
@@ -300,7 +320,7 @@ function ProductoDetalle() {
           {/* DETALLES DEL PRODUCTO */}
           <div>
             <div style={{ marginBottom: '0.5rem' }}>
-              <span className="badge badge-terracotta" style={{fontSize: '0.9rem', marginBottom: '0.8rem'}}>{producto.categoria_nombre}</span>
+              <span className="badge badge-terracotta" style={{ fontSize: '0.9rem', marginBottom: '0.8rem' }}>{producto.categoria_nombre}</span>
               {producto.destacado && <span className="badge badge-sunflower" style={{ marginLeft: '0.4rem' }}>Destacado</span>}
             </div>
             <h2 style={{ marginBottom: '0.5rem' }}>{producto.nombre}</h2>
@@ -334,13 +354,13 @@ function ProductoDetalle() {
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', padding: '2rem 0 0 0' }}>
               {usuario && (
-                <button className="btn btn-danger" style={{ marginTop: '1rem' }} onClick={handleReportar}>
+                <button className="btn btn-danger" style={{ marginTop: '1rem', height: '40px', width: '100px' }} onClick={handleReportar}>
                   Reportar
                 </button>
               )}
 
               {(usuario?.tipo === 'admin' || usuario?.tipo === 'moderador') && (
-                <button className="btn btn-danger" style={{ marginTop: '1rem' }} onClick={handleOcultar}>
+                <button className="btn btn-danger" style={{ marginTop: '1rem', height: '40px', width: '100px' }} onClick={handleOcultar}>
                   Ocultar
                 </button>
               )}

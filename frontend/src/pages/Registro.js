@@ -7,6 +7,8 @@ function Registro() {
   const [tab, setTab] = useState('cliente');
   const [categorias, setCategorias] = useState([]);
   const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [msgType, setMsgType] = useState('info');
   const [showPassword, setShowPassword] = useState(false);
   const { registroCliente, registroEmprendedor } = useAuth();
   const navigate = useNavigate();
@@ -34,7 +36,10 @@ function Registro() {
     }
 
     try {
-      await registroCliente(clienteForm.nombre_usuario, clienteForm.email, clienteForm.password);
+      const data = await registroCliente(clienteForm.nombre_usuario, clienteForm.email, clienteForm.password);
+      setMensaje(data?.message || `Cliente registrado correctamente `);
+      setMsgType('success');
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Error en el registro');
@@ -53,8 +58,12 @@ function Registro() {
       return;
     }
     try {
-      await registroEmprendedor(empForm);
+      const data = await registroEmprendedor(empForm);
+      setMensaje(data?.message || `Emprendedor registrado correctamente `);
+      setMsgType('success');
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       navigate('/mi-emprendimiento');
+
     } catch (err) {
       setError(err.response?.data?.error || 'Error en el registro');
     }
@@ -64,7 +73,12 @@ function Registro() {
     <div className="auth-wrapper page-enter">
       <div className="auth-card" style={{ maxWidth: 520 }}>
         <h2>Crear cuenta</h2>
-
+        {mensaje && (
+          <div className={`alert alert-${msgType} flash`}>
+            {mensaje}
+            <button className="alert-close" style={{ marginLeft: '5px' }} onClick={() => setMensaje('')}>&times;</button>
+          </div>
+        )}
         {error && (
           <div className="alert alert-error">
             {error}
@@ -80,7 +94,7 @@ function Registro() {
         {tab === 'cliente' ? (
           <form onSubmit={handleCliente}>
             <div className="form-group">
-              <label className="form-label">Nombre de usuario</label>
+              <label className="form-label">Nombre</label>
               <input className="form-input" value={clienteForm.nombre_usuario} onChange={e => setClienteForm({ ...clienteForm, nombre_usuario: e.target.value })} required />
             </div>
             <div className="form-group">

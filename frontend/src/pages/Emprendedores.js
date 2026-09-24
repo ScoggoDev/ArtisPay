@@ -39,7 +39,7 @@ function Emprendedores() {
     <div className="page-enter container">
       <div className="section">
         {mensaje && (
-          <div className={`alert alert-${msgType}`}>
+          <div className={`alert alert-${msgType} flash`}>
             {mensaje}
             <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
           </div>
@@ -52,24 +52,54 @@ function Emprendedores() {
           </div>
         ) : (
           <div className="grid grid-4">
-            {emprendimientos.map(e => (
-              <div key={e.id_emprendimiento} className="emp-card">
-                {e.imagen_perfil ? (
-                  <img src={resolveUrl(e.imagen_perfil)} alt={e.nombre} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
-                ) : (
-                  <ArtisanLogo nombre={e.nombre} id_categoria={e.id_categoria} size={80} />
-                )}
-                <div className="emp-name">{e.nombre}</div>
-                <p className="emp-desc">{e.descripcion?.substring(0, 80)}</p>
-                {e.ubicacion && <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '0.8rem' }}>{e.ubicacion}</p>}
-                <Link to={`/emprendedor/${e.id_emprendimiento}`} className="btn btn-outline btn-sm">Ver perfil</Link>
-                {usuario?.tipo === 'admin' && (
-                  <button className="btn btn-outline btn-sm" style={{ marginTop: '0.5rem' }} onClick={() => handleDestacado(e.id_emprendimiento)}>
-                    Hacer emprendedor de la semana
-                  </button>
-                )}
-              </div>
-            ))}
+            {emprendimientos.map(e => {
+              const descripcionCorta = e.descripcion
+                ? (e.descripcion.length > 50 ? `${e.descripcion.substring(0, 50)}...` : e.descripcion)
+                : '';
+
+              return (
+                <div
+                  key={e.id_emprendimiento}
+                  className="emp-card"
+                  style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems:'center' }}
+                >
+                  {e.imagen_perfil ? (
+                    <img
+                      src={resolveUrl(e.imagen_perfil)}
+                      alt={e.nombre}
+                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <ArtisanLogo nombre={e.nombre} id_categoria={e.id_categoria} size={80} />
+                  )}
+
+                  <div className="emp-name">{e.nombre}</div>
+                  <p className="emp-desc">{descripcionCorta}</p>
+
+                  {e.ubicacion && (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: '0.8rem' }}>
+                      {e.ubicacion}
+                    </p>
+                  )}
+
+                  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                    <Link to={`/emprendedor/${e.id_emprendimiento}`} className="btn btn-outline btn-sm">
+                      Ver perfil
+                    </Link>
+
+                    {usuario?.tipo === 'admin' && (
+                      <button
+                        className="btn btn-outline btn-sm"
+                        style={{ marginTop: '0.5rem' }}
+                        onClick={() => handleDestacado(e.id_emprendimiento)}
+                      >
+                        Hacer emprendedor de la semana
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

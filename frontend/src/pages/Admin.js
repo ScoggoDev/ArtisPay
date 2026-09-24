@@ -9,7 +9,7 @@ function Admin() {
   const [stats, setStats] = useState(null);
 
   // categorías // 
-  const { categoria, registroCategoria } = useAuth();
+  const { registroCategoria } = useAuth();
   const [categorias, setCategorias] = useState([]);
   const [formDataCategoria, setFormDataCategoria] = useState({
     nombre: '',
@@ -38,6 +38,7 @@ function Admin() {
 
   // mensajes y estados //
   const [mensaje, setMensaje] = useState('');
+  const [msgType, setMsgType] = useState('info');
   const [tab, setTab] = useState('stats');
   const [loading, setLoading] = useState(false);
 
@@ -185,6 +186,7 @@ function Admin() {
       await registroModerador(formData.nombre_usuario, formData.email, formData.password);
 
       setMensaje('Moderador creado exitosamente');
+      setMsgType('success');
       setShowModal(false);
       setFormData({ nombre_usuario: '', email: '', password: '', confirmPassword: '' });
 
@@ -214,11 +216,11 @@ function Admin() {
 
   return (
     <div className="page-enter">
-      <div className="container section" style={{minHeight: '78vh' }}>
+      <div className="container section" style={{ minHeight: '78vh' }}>
         <h2 style={{ marginBottom: '1.5rem' }}>Panel de administración</h2>
 
         {mensaje && (
-          <div className="alert alert-info">
+          <div className={`alert alert-${msgType} flash`}>
             {mensaje}
             <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
           </div>
@@ -490,11 +492,14 @@ function Admin() {
 
               <form onSubmit={handleCrearModerador}>
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem' }}>Nombre de usuario</label>
+                  <label style={{ display: 'block', marginBottom: '0.3rem' }} htmlFor="nombre_usuario">
+                    Nombre de usuario
+                  </label>
                   <input
                     type="text"
                     name="nombre_usuario"
-                    className="form-control"
+                    id="nombre_usuario"
+                    className="form-input"
                     value={formData.nombre_usuario}
                     onChange={handleChange}
                     required
@@ -502,11 +507,14 @@ function Admin() {
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem' }}>Email</label>
+                  <label style={{ display: 'block', marginBottom: '0.3rem' }} htmlFor="email">
+                    Email
+                  </label>
                   <input
                     type="email"
                     name="email"
-                    className="form-control"
+                    id="email"
+                    className="form-input"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -514,11 +522,14 @@ function Admin() {
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem' }}>Contraseña</label>
+                  <label style={{ display: 'block', marginBottom: '0.3rem' }} htmlFor="password">
+                    Contraseña
+                  </label>
                   <input
                     type="password"
                     name="password"
-                    className="form-control"
+                    id="password"
+                    className="form-input"
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -526,11 +537,14 @@ function Admin() {
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem' }}>Confirmar contraseña</label>
+                  <label style={{ display: 'block', marginBottom: '0.3rem' }} htmlFor="confirmPassword">
+                    Confirmar contraseña
+                  </label>
                   <input
                     type="password"
                     name="confirmPassword"
-                    className="form-control"
+                    id="confirmPassword"
+                    className="form-input"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required

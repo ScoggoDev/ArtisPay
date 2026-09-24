@@ -4,13 +4,14 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ArtisanLogo from '../components/ArtisanLogo';
+import ImageCropperModal from '../components/ImageCropperModal';
 
 const PAYSANDU_CENTER = [-32.317, -58.076];
-const ROL_LABELS = { 
-  cliente: 'Cliente', 
-  emprendedor: 'Emprendedor', 
-  admin: 'Administrador', 
-  moderador: 'Moderador' 
+const ROL_LABELS = {
+  cliente: 'Cliente',
+  emprendedor: 'Emprendedor',
+  admin: 'Administrador',
+  moderador: 'Moderador'
 };
 
 // Funciones auxiliares fuera del componente
@@ -52,7 +53,7 @@ function buildRedesString(ig, fb, ot) {
   }
   if (fb.trim()) result.push(fb.trim());
   if (ot.trim()) result.push(ot.trim());
-  
+
   return result.join(', ');
 }
 
@@ -78,6 +79,10 @@ function Perfil() {
   const [editForm, setEditForm] = useState({});
   const [socialFields, setSocialFields] = useState({ instagram: '', facebook: '', otra: '' });
 
+  // Estados para el Cropper de imagen de perfil
+  const [tempImageSrc, setTempImageSrc] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+
   // 3. Referencias
   const markerRef = useRef(null);
   const profileFileInputRef = useRef(null);
@@ -92,14 +97,14 @@ function Perfil() {
             setSocialFields(parseRedes(r.data.redes_sociales));
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [empCtx]);
 
   // 5. Handlers
-  const flash = (msg, type = 'success') => { 
-    setMensaje(msg); 
-    setMsgType(type); 
+  const flash = (msg, type = 'success') => {
+    setMensaje(msg);
+    setMsgType(type);
   };
 
   const handleDesactivar = async () => {
@@ -124,17 +129,40 @@ function Perfil() {
     }
   };
 
+  // Abre el modal cargando la imagen original seleccionada
   const handleProfileImageFile = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files && e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const base64 = ev.target.result;
-      const key = `ls:artispay_img_${Date.now()}`;
-      localStorage.setItem(key, base64);
-      setEditForm(f => ({ ...f, imagen_perfil: key }));
+      setTempImageSrc(ev.target.result);
+      setIsCropping(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  // Recibe la imagen recortada devuelta por el modal y la guarda
+  const handleCropComplete = (croppedBase64Image) => {
+    // 1. Eliminar únicamente las imágenes anteriores del perfil
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('ls:artispay_profile_img_')) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // 2. Usar un prefijo exclusivo para el perfil
+    const key = `ls:artispay_profile_img_${Date.now()}`;
+
+    try {
+      localStorage.setItem(key, croppedBase64Image);
+      setEditForm(f => ({ ...f, imagen_perfil: key }));
+    } catch (error) {
+      flash('No hay suficiente espacio disponible. Intenta seleccionar un área más pequeña.', 'error');
+    }
+
+    setIsCropping(false);
+    setTempImageSrc(null);
+    if (profileFileInputRef.current) profileFileInputRef.current.value = '';
   };
 
   const handleRemoveProfileImage = () => {
@@ -173,7 +201,7 @@ function Perfil() {
 
   const profileImageSrc = resolveUrl(editForm.imagen_perfil);
   const position = [
-    editForm.latitud || PAYSANDU_CENTER[0], 
+    editForm.latitud || PAYSANDU_CENTER[0],
     editForm.longitud || PAYSANDU_CENTER[1]
   ];
 
@@ -183,11 +211,11 @@ function Perfil() {
         <div className="edit-section">
           <h4>Editar perfil</h4>
           {mensaje && (
-          <div className={`alert alert-${msgType} flash`}>
-            {mensaje}
-            <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
-          </div>
-        )}
+            <div className={`alert alert-${msgType} flash`}>
+              {mensaje}
+              <button className="alert-close" onClick={() => setMensaje('')}>&times;</button>
+            </div>
+          )}
           <form onSubmit={handleUpdatePerfil}>
 
             {/* Imagen de Perfil */}
@@ -259,39 +287,39 @@ function Perfil() {
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Nombre</label>
-                <input 
-                  className="form-input" 
-                  value={editForm.nombre || ''} 
-                  onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} 
+                <input
+                  className="form-input"
+                  value={editForm.nombre || ''}
+                  onChange={e => setEditForm({ ...editForm, nombre: e.target.value })}
                 />
               </div>
               <div className="form-group">
                 <label className="form-label">Teléfono</label>
-                <input 
-                  className="form-input" 
-                  value={editForm.telefono || ''} 
-                  onChange={e => setEditForm({ ...editForm, telefono: e.target.value })} 
+                <input
+                  className="form-input"
+                  value={editForm.telefono || ''}
+                  onChange={e => setEditForm({ ...editForm, telefono: e.target.value })}
                 />
               </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Descripción</label>
-              <textarea 
-                className="form-textarea" 
-                rows={3} 
-                value={editForm.descripcion || ''} 
-                onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })} 
+              <textarea
+                className="form-textarea"
+                rows={3}
+                value={editForm.descripcion || ''}
+                onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}
               />
             </div>
 
             <div className="form-group">
               <label className="form-label">Ubicación (Dirección o Referencia)</label>
-              <input 
-                className="form-input" 
-                value={editForm.ubicacion || ''} 
-                onChange={e => setEditForm({ ...editForm, ubicacion: e.target.value })} 
-                placeholder="Ej: 18 de Julio y Montecaseros" 
+              <input
+                className="form-input"
+                value={editForm.ubicacion || ''}
+                onChange={e => setEditForm({ ...editForm, ubicacion: e.target.value })}
+                placeholder="Ej: 18 de Julio y Montecaseros"
               />
             </div>
 
@@ -372,9 +400,9 @@ function Perfil() {
       )}
 
       {/* Tarjeta con perfil general */}
-      <div className="section" style={{ marginBottom: '1.5rem', maxWidth: '600px'}}>
+      <div className="section" style={{ marginBottom: '1.5rem', maxWidth: '600px' }}>
         <h2 style={{ marginBottom: '1.5rem' }}>Mi perfil</h2>
-        
+
         <div className="edit-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
             <ArtisanLogo nombre={usuario.nombre_usuario} size={56} />
@@ -383,15 +411,28 @@ function Perfil() {
               <div style={{ color: 'var(--text-light)', fontSize: '0.88rem' }}>{usuario.email}</div>
             </div>
           </div>
-          
+
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
             <span className="badge badge-sage">{ROL_LABELS[usuario.tipo] || usuario.tipo}</span>
           </div>
-          
+
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1rem 0' }} />
           <button className="btn btn-danger btn-sm" onClick={handleDesactivar}>Desactivar cuenta</button>
         </div>
       </div>
+
+      {/* Modal Editor de Recorte */}
+      {isCropping && (
+        <ImageCropperModal
+          imageSrc={tempImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setIsCropping(false);
+            setTempImageSrc(null);
+            if (profileFileInputRef.current) profileFileInputRef.current.value = '';
+          }}
+        />
+      )}
     </div>
   );
 }

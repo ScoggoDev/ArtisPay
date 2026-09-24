@@ -59,9 +59,9 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const solicitarPresupuesto = async(id_emprendimiento, id_usuario, descripcion) => {
+  const solicitarPresupuesto = async(id_emprendimiento, id_usuario, descripcion, telefono_cliente) => {
     const mensaje = descripcion;
-    const { data } = await api.post('/solicitudes', {id_emprendimiento, id_usuario, mensaje});
+    const { data } = await api.post('/solicitudes', {id_emprendimiento, id_usuario, mensaje, telefono_cliente});
     return data;
   }
 
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
   };
 
   const ocultarProducto = async (id) => {
-    const { data } = await api.post(`/productos/${id}/ocultar`);
+    const { data } = await api.put(`/admin/productos/${id}/ocultar`);
     console.log(data)
     return data;
   };

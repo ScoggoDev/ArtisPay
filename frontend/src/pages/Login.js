@@ -47,7 +47,7 @@ function Login() {
               checked={showPassword}
               onChange={e => setShowPassword(e.target.checked)}
             />
-            <label htmlFor="show-pass-cliente" style={{ cursor: 'pointer', userSelect: 'none' }}>Mostrar contraseñas</label>
+            <label htmlFor="show-pass-cliente" style={{ cursor: 'pointer', userSelect: 'none' }}>Mostrar contraseña</label>
           </div>
           <p style={{ textAlign: 'center', marginTop: '1.2rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
             Olvidé mi contraseña <Link to="/olvide-contrasena">Restablecer contraseña</Link>

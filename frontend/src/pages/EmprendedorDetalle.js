@@ -261,9 +261,9 @@ function EmprendedorDetalle() {
             </div>}
 
         </div>
-        <section className="section" style={{ paddingTop: 0 }}>
+        <section className="section" style={{ paddingTop: 0}}>
           {emp?.productos?.length === 0 ? (
-            <div className="empty">
+            <div className="empty" style={{ minHeight: '39vh'  }}>
               <h3 style={{ marginBottom: '1.5rem' }}>Productos</h3>
               <p>Este emprendimiento aún no tiene productos publicados.</p>
             </div>
