@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const { query } = require('../db/pool');
 
+
 // obtener todos los emprendimientos //
 router.get('/', async (req, res) => {
   const { recordset } = await query(`
@@ -17,13 +18,60 @@ router.get('/', async (req, res) => {
 // get emprendedor destacado //
 router.get('/emprendedor-destacado', async (req, res) => {
   try {
+    // 1. Obtener el registro actual con su fecha de actualización
+    const { recordset: actualRecord } = await query(`
+      SELECT id_emprendimiento, fecha_actualizacion 
+      FROM dbo.emprendedor_destacado 
+      WHERE id = 1
+    `);
+
+    const destacadoActual = actualRecord[0];
+    const ahora = new Date();
+    let idEmprendimiento = destacadoActual?.id_emprendimiento;
+
+    // Calcular si fue modificado hace más de una semana (7 días en ms)
+    const unaSemanaEnMs = 7 * 24 * 60 * 60 * 1000;
+    const necesitaRotacion = !destacadoActual || 
+      !destacadoActual.fecha_actualizacion || 
+      (ahora - new Date(destacadoActual.fecha_actualizacion)) > unaSemanaEnMs;
+
+    // 2. Si necesita rotación, seleccionar un nuevo emprendedor
+    if (necesitaRotacion) {
+      const { recordset: candidatos } = await query(`
+        SELECT TOP 1 e.id_emprendimiento
+        FROM dbo.emprendimientos e
+        JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario
+        JOIN dbo.productos p ON p.id_emprendimiento = e.id_emprendimiento
+        WHERE u.activo = 1
+          AND e.id_emprendimiento != @idActual
+        GROUP BY e.id_emprendimiento
+        HAVING COUNT(DISTINCT p.id_producto) >= 2
+        ORDER BY NEWID()
+      `, { idActual: idEmprendimiento || 0 });
+
+      // Si existe al menos un candidato válido, actualizamos el destacado
+      if (candidatos.length > 0) {
+        idEmprendimiento = candidatos[0].id_emprendimiento;
+
+        await query(`
+          IF EXISTS (SELECT 1 FROM dbo.emprendedor_destacado WHERE id = 1)
+            UPDATE dbo.emprendedor_destacado 
+            SET id_emprendimiento = @idEmprendimiento, fecha_actualizacion = GETDATE()
+            WHERE id = 1;
+          ELSE
+            INSERT INTO dbo.emprendedor_destacado (id, id_emprendimiento, fecha_actualizacion)
+            VALUES (1, @idEmprendimiento, GETDATE());
+        `, { idEmprendimiento });
+      }
+    }
+
+    // 3. Obtener el perfil del emprendedor destacado final
     const { recordset: perfilRecord } = await query(`
       SELECT e.id_emprendimiento, e.nombre, c.nombre as categoria, e.descripcion, e.imagen_perfil
-      FROM dbo.emprendedor_destacado ed
-      JOIN dbo.emprendimientos e ON ed.id_emprendimiento = e.id_emprendimiento
+      FROM dbo.emprendimientos e
       JOIN dbo.categorias c ON c.id_categoria = e.id_categoria
-      WHERE ed.id = 1
-    `);
+      WHERE e.id_emprendimiento = @idEmprendimiento
+    `, { idEmprendimiento });
 
     const perfil = perfilRecord[0];
 
@@ -31,7 +79,7 @@ router.get('/emprendedor-destacado', async (req, res) => {
       return res.json(null);
     }
 
-    // buscar sus 5 productos más recientes //
+    // 4. Buscar sus 5 productos más recientes //
     const { recordset: productos } = await query(`
       SELECT TOP 5 p.id_producto, p.nombre, p.descripcion, p.precio, p.activo, p.fecha_publicacion, i.url as imagenes
       FROM dbo.productos p

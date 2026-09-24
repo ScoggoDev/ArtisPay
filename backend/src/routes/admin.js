@@ -83,7 +83,7 @@ router.put('/reportes/:id', authenticateToken, requireRole('admin', 'moderador')
 
 router.put('/productos/:id/ocultar', authenticateToken, requireRole('admin', 'moderador'), async (req, res) => {
   const { rowsAffected } = await query(
-    'UPDATE dbo.productos SET activo = 0 WHERE id_producto = @id',
+    'UPDATE dbo.productos SET activo = 0 WHERE id_producto = @id_producto',
     { id_producto: parseInt(req.params.id) }
   );
   if (!rowsAffected[0]) return res.status(404).json({ error: 'Producto no encontrado' });

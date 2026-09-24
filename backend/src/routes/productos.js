@@ -133,7 +133,7 @@ router.put('/:id', authenticateToken, requireRole('emprendedor'), async (req, re
   );
   if (!prodRecord[0]) return res.status(404).json({ error: 'Producto no encontrado' });
 
-  const { nombre, descripcion, precio, id_categoria, destacado } = req.body;
+  const { nombre, descripcion, precio, id_categoria, destacado, imagenes } = req.body;
 
   const { recordset } = await query(`
     UPDATE dbo.productos SET
@@ -154,11 +154,63 @@ router.put('/:id', authenticateToken, requireRole('emprendedor'), async (req, re
   });
   const producto = recordset[0];
 
+  if (imagenes && Array.isArray(imagenes)) {
+    for (let index = 0; index < imagenes.length; index++) {
+      await query(
+        'INSERT INTO dbo.imagenes_producto (id_producto, url, orden) VALUES (@id_producto, @url, @orden)',
+        { id_producto: producto.id_producto, url: imagenes[index], orden: index }
+      );
+    }
+  }
+
   const { recordset: imgs } = await query(
     'SELECT * FROM dbo.imagenes_producto WHERE id_producto = @id_producto',
     { id_producto }
   );
   res.json({ ...producto, imagenes: imgs });
+});
+
+// Cambiar estado de destacado de un producto
+router.patch('/:id/destacado', authenticateToken, requireRole('emprendedor'), async (req, res) => {
+  try {
+    const { recordset: empRecord } = await query(
+      'SELECT * FROM dbo.emprendimientos WHERE id_usuario = @id_usuario',
+      { id_usuario: req.usuario.id_usuario }
+    );
+    const emp = empRecord[0];
+    if (!emp) return res.status(404).json({ error: 'No tiene un emprendimiento asociado' });
+
+    const id_producto = parseInt(req.params.id);
+    const { destacado } = req.body;
+
+    if (destacado === undefined) {
+      return res.status(400).json({ error: 'El campo destacado es obligatorio' });
+    }
+
+    // Verificar que el producto pertenece al emprendimiento del usuario
+    const { recordset: prodRecord } = await query(
+      'SELECT * FROM dbo.productos WHERE id_producto = @id_producto AND id_emprendimiento = @id_emprendimiento',
+      { id_producto, id_emprendimiento: emp.id_emprendimiento }
+    );
+    if (!prodRecord[0]) return res.status(404).json({ error: 'Producto no encontrado' });
+
+    const esDestacado = destacado ? 1 : 0;
+
+    const { recordset } = await query(`
+      UPDATE dbo.productos
+      SET destacado = @destacado
+      OUTPUT INSERTED.*
+      WHERE id_producto = @id_producto
+    `, {
+      destacado: esDestacado,
+      id_producto
+    });
+
+    res.json(recordset[0]);
+  } catch (error) {
+    console.error('Error al actualizar el estado de destacado:', error);
+    res.status(500).json({ error: 'Error interno del servidor al actualizar el destacado' });
+  }
 });
 
 router.delete('/:id', authenticateToken, requireRole('emprendedor'), async (req, res) => {
@@ -171,7 +223,7 @@ router.delete('/:id', authenticateToken, requireRole('emprendedor'), async (req,
 
   const id_producto = parseInt(req.params.id);
   const { rowsAffected } = await query(
-    'UPDATE dbo.productos SET activo = 0 WHERE id_producto = @id_producto AND id_emprendimiento = @id_emprendimiento',
+    'UPDATE dbo.productos SET activo = 0, destacado = 0 WHERE id_producto = @id_producto AND id_emprendimiento = @id_emprendimiento',
     { id_producto, id_emprendimiento: emp.id_emprendimiento }
   );
   if (!rowsAffected[0]) return res.status(404).json({ error: 'Producto no encontrado' });

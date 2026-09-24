@@ -91,19 +91,19 @@ router.post('/', authenticateToken, requireRole('emprendedor'), async (req, res)
   const emp = empRecord[0];
   if (!emp) return res.status(404).json({ error: 'No tiene un emprendimiento asociado' });
 
-  const { nombre, descripcion, categoria, precio, imagenes } = req.body;
+  const { nombre, descripcion, id_categoria, precio, imagenes } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
   const { recordset } = await query(`
-    INSERT INTO dbo.servicios (id_emprendimiento, nombre, descripcion, categoria, precio, activo)
+    INSERT INTO dbo.servicios (id_emprendimiento, nombre, descripcion, precio, activo, id_categoria)
     OUTPUT INSERTED.*
-    VALUES (@id_emprendimiento, @nombre, @descripcion, @categoria, @precio, 1)
+    VALUES (@id_emprendimiento, @nombre, @descripcion, @precio, 1, @id_categoria)
   `, {
     id_emprendimiento: emp.id_emprendimiento,
     nombre,
     descripcion: descripcion || '',
-    categoria: categoria || null,
     precio: precio ? parseFloat(precio) : null,
+    id_categoria: id_categoria || null,
   });
 
   const servicio = recordset[0];

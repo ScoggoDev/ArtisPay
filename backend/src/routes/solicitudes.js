@@ -86,5 +86,52 @@ router.post('/', authenticateToken, requireRole('cliente','emprendedor'), async 
     }
 });
 
+router.patch('/:id_solicitud/estado', authenticateToken, requireRole('emprendedor'), async (req, res) => {
+    try {
+        const { id_solicitud } = req.params;
+        const { estado } = req.body;
+        const id_usuario = req.usuario?.id_usuario || req.user?.id_usuario;
+
+        if (!['aceptada', 'rechazada'].includes(estado)) {
+            return res.status(400).json({ error: "El estado debe ser 'aceptada' o 'rechazada'" });
+        }
+
+        const { recordset: empRecord } = await query(
+            'SELECT id_emprendimiento FROM dbo.emprendimientos WHERE id_usuario = @id_usuario',
+            { id_usuario }
+        );
+
+        const emprendimiento = empRecord[0];
+        if (!emprendimiento) {
+            return res.status(404).json({ error: 'No se encontró un emprendimiento asociado a este usuario' });
+        }
+
+        const { recordset: solRecord } = await query(
+            'SELECT * FROM dbo.solicitudes_presupuesto WHERE id_solicitud = @id_solicitud AND id_emprendimiento = @id_emprendimiento',
+            { id_solicitud, id_emprendimiento: emprendimiento.id_emprendimiento }
+        );
+
+        if (!solRecord[0]) {
+            return res.status(404).json({ error: 'Solicitud no encontrada o no pertenece a tu emprendimiento' });
+        }
+
+        const { recordset } = await query(`
+            UPDATE dbo.solicitudes_presupuesto
+            SET estado = @estado
+            OUTPUT INSERTED.*
+            WHERE id_solicitud = @id_solicitud
+        `, {
+            estado,
+            id_solicitud
+        });
+
+        res.json({ mensaje: 'Estado de la solicitud actualizado correctamente', solicitud: recordset[0] });
+
+    } catch (error) {
+        console.error('Error al actualizar el estado de la solicitud:', error);
+        res.status(500).json({ error: 'Error interno del servidor al actualizar el estado' });
+    }
+});
+
 
 module.exports = router;
