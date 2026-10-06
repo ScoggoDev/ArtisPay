@@ -672,12 +672,18 @@ a:hover {
   .home-split {
     grid-template-columns: 1fr;
   }
+
+  .home-split-side .featured-card {
+    width: 50%;
+  }
 }
 
 .home-split-side .featured-card {
   padding: 1.4rem;
   gap: 1.2rem;
 }
+
+
 
 .home-split-side .featured-profile {
   gap: 1rem;
