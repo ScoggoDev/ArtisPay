@@ -21,9 +21,8 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
-// -----------------------------------------------------------------------------
-// POST /api/reseteo-pass/forgot-password
-// -----------------------------------------------------------------------------
+
+
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
@@ -71,9 +70,8 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// -----------------------------------------------------------------------------
-// POST /api/reseteo-pass/reset-password
-// -----------------------------------------------------------------------------
+
+
 router.post('/reset-password', async (req, res) => {
   const { id_usuario, token, newPassword } = req.body;
 

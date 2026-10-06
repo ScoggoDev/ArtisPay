@@ -18,7 +18,6 @@ router.get('/', async (req, res) => {
 // get emprendedor destacado //
 router.get('/emprendedor-destacado', async (req, res) => {
   try {
-    // 1. Obtener el registro actual con su fecha de actualización
     const { recordset: actualRecord } = await query(`
       SELECT id_emprendimiento, fecha_actualizacion 
       FROM dbo.emprendedor_destacado 
@@ -29,13 +28,11 @@ router.get('/emprendedor-destacado', async (req, res) => {
     const ahora = new Date();
     let idEmprendimiento = destacadoActual?.id_emprendimiento;
 
-    // Calcular si fue modificado hace más de una semana (7 días en ms)
     const unaSemanaEnMs = 7 * 24 * 60 * 60 * 1000;
     const necesitaRotacion = !destacadoActual || 
       !destacadoActual.fecha_actualizacion || 
       (ahora - new Date(destacadoActual.fecha_actualizacion)) > unaSemanaEnMs;
 
-    // 2. Si necesita rotación, seleccionar un nuevo emprendedor
     if (necesitaRotacion) {
       const { recordset: candidatos } = await query(`
         SELECT TOP 1 e.id_emprendimiento
@@ -49,7 +46,6 @@ router.get('/emprendedor-destacado', async (req, res) => {
         ORDER BY NEWID()
       `, { idActual: idEmprendimiento || 0 });
 
-      // Si existe al menos un candidato válido, actualizamos el destacado
       if (candidatos.length > 0) {
         idEmprendimiento = candidatos[0].id_emprendimiento;
 
@@ -65,7 +61,6 @@ router.get('/emprendedor-destacado', async (req, res) => {
       }
     }
 
-    // 3. Obtener el perfil del emprendedor destacado final
     const { recordset: perfilRecord } = await query(`
       SELECT e.id_emprendimiento, e.nombre, c.nombre as categoria, e.descripcion, e.imagen_perfil
       FROM dbo.emprendimientos e
@@ -79,7 +74,6 @@ router.get('/emprendedor-destacado', async (req, res) => {
       return res.json(null);
     }
 
-    // 4. Buscar sus 5 productos más recientes //
     const { recordset: productos } = await query(`
       SELECT TOP 5 p.id_producto, p.nombre, p.descripcion, p.precio, p.activo, p.fecha_publicacion, i.url as imagenes
       FROM dbo.productos p
@@ -182,7 +176,7 @@ router.put('/me', authenticateToken, requireRole('emprendedor'), async (req, res
   res.json(recordset[0]);
 });
 
-// obtener un emprendimiento por id // 
+
 router.get('/:id', async (req, res) => {
   const id_emprendimiento = parseInt(req.params.id);
 
